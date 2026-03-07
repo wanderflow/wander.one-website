@@ -1,31 +1,38 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import styles from "./style.module.scss";
 import Image from "next/image";
 
-export default function Index({ refs }) {
+export default function Index({ refs, logoSrc, logoSrcScrolled }) {
+  const [currentLogoSrc, setCurrentLogoSrc] = useState(logoSrc || "/wander.png");
+
   useEffect(() => {
     const handleScroll = () => {
       const header = document.querySelector(`.${styles.header}`);
       if (window.scrollY > 50) {
         header.classList.add(styles.scrolled);
+        if (logoSrcScrolled != null) setCurrentLogoSrc(logoSrcScrolled);
       } else {
         header.classList.remove(styles.scrolled);
+        if (logoSrcScrolled != null) setCurrentLogoSrc(logoSrc || "/wander.png");
       }
     };
 
+    handleScroll();
     window.addEventListener("scroll", handleScroll);
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [logoSrc, logoSrcScrolled]);
 
   const scrollToSection = (sectionRef) => {
-    sectionRef.current.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    if (sectionRef?.current) {
+      sectionRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
   };
 
   return (
@@ -33,9 +40,14 @@ export default function Index({ refs }) {
       <div className={styles.header}>
         <div
           className={styles.logo}
-          onClick={() => scrollToSection(refs.landingRef)}
+          onClick={() => refs?.landingRef && scrollToSection(refs.landingRef)}
         >
-          <Image width={35} height={35} alt={"image"} src={`/wander.png`} />
+          <Image
+            width={35}
+            height={35}
+            alt="Wander"
+            src={currentLogoSrc}
+          />
           <div className={styles.name}>
             <p className={styles.codeBy}>Wander</p>
           </div>
