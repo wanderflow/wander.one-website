@@ -13,7 +13,7 @@ export default function CommunityGuidelines() {
         Welcome to Wander, a social media platform where an AI generates
         questions, including those based on your location, for you to answer,
         creating posts that others can see, like, and comment on. Our Community
-        Guidelines ("Guidelines") ensure that Wander remains a safe, respectful,
+        Guidelines (&quot;Guidelines&quot;) ensure that Wander remains a safe, respectful,
         and inclusive space for everyone. By using Wander, you agree to follow
         these Guidelines, our <a href="/tc">Terms and Conditions</a>, and our{" "}
         <a href="/privacy">Privacy Policy</a>. Failure to comply may result in
@@ -23,12 +23,12 @@ export default function CommunityGuidelines() {
       <h2>1. Our Commitment to Community</h2>
       <p>
         Wander is a place to share ideas, connect through creative responses,
-        and engage with others' stories. We encourage open expression but
+        and engage with others&apos; stories. We encourage open expression but
         prioritize safety and respect. These Guidelines apply to all content you
         create or share, including posts, comments, profiles, and feedback.
       </p>
 
-      <h2>2. What's Allowed</h2>
+      <h2>2. What&apos;s Allowed</h2>
       <p>We welcome content that:</p>
       <ul>
         <li>
@@ -41,7 +41,7 @@ export default function CommunityGuidelines() {
         <li>Respects diverse perspectives and celebrates inclusivity.</li>
       </ul>
 
-      <h2>3. What's Not Allowed</h2>
+      <h2>3. What&apos;s Not Allowed</h2>
       <p>To keep Wander safe, we prohibit content or behavior that:</p>
       <ul>
         <li>
@@ -97,13 +97,13 @@ export default function CommunityGuidelines() {
           for flagged items within 24–48 hours.
         </li>
         <li>
-          <strong>Reporting</strong>: Use the "Report" button on posts,
+          <strong>Reporting</strong>: Use the &quot;Report&quot; button on posts,
           comments, or profiles to flag violations (e.g., hate speech,
-          harassment). Select a reason for clarity, and we'll review within 48
+          harassment). Select a reason for clarity, and we&apos;ll review within 48
           hours, notifying you of the outcome.
         </li>
         <li>
-          <strong>Blocking</strong>: Block users via the "Block" button to
+          <strong>Blocking</strong>: Block users via the &quot;Block&quot; button to
           prevent interaction or visibility. Blocking is immediate and
           reversible in settings.
         </li>
@@ -132,7 +132,7 @@ export default function CommunityGuidelines() {
         </li>
         <li>
           <strong>Reporting Violations</strong>: Flag harmful content using the
-          "Report" button to protect the community.
+          &quot;Report&quot; button to protect the community.
         </li>
         <li>
           <strong>Respecting Others</strong>: Engage with kindness, even when
@@ -140,7 +140,7 @@ export default function CommunityGuidelines() {
         </li>
         <li>
           <strong>Deleting Content</strong>: Remove your own posts if they no
-          longer reflect your intentions, using the "Delete" button for
+          longer reflect your intentions, using the &quot;Delete&quot; button for
           immediate removal.
         </li>
       </ul>
@@ -152,7 +152,7 @@ export default function CommunityGuidelines() {
           permission), to spark engaging posts. Questions aim to be safe and
           relevant, but you can:
           <ul>
-            <li>Skip any question you don't want to answer.</li>
+            <li>Skip any question you don&apos;t want to answer.</li>
             <li>
               Provide feedback via the app or quinn@wander.one to improve
               question quality.
@@ -160,7 +160,7 @@ export default function CommunityGuidelines() {
           </ul>
         </li>
         <li>
-          Your responses may be used to refine the AI, but only with your
+          Your responses \"may be used to refine the AI, but only with your
           consent (see Privacy Policy, Section 4).
         </li>
       </ul>
@@ -208,8 +208,8 @@ export default function CommunityGuidelines() {
       <hr />
 
       <p>
-        Thank you for being part of the Wander community. Let's create a space
-        that's inspiring, respectful, and fun for all!
+        Thank you for being part of the Wander community. Let&apos;s create a space
+        that&apos;s inspiring, respectful, and fun for all!
       </p>
     </div>
   );

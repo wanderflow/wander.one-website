@@ -10,7 +10,7 @@ export default function PrivacyPolicy() {
       </p>
 
       <p>
-        Wander ("we," "us," or "our") is committed to protecting your privacy.
+        Wander (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is committed to protecting your privacy.
         This Privacy Policy explains how we collect, use, store, and share your
         information when you use Wander, a social media app where an AI
         generates questions, including location-based questions, for you to
@@ -110,7 +110,7 @@ export default function PrivacyPolicy() {
       <ul>
         <li>
           <strong>Purpose</strong>: We use your location data to generate
-          contextually relevant AI questions (e.g., "What's your favorite local
+          contextually relevant AI questions (e.g., &quot;What&apos;s your favorite local
           cafe?" based on your city). Location data enhances the relevance of
           questions but is not required to use Wander.
         </li>
@@ -134,9 +134,9 @@ export default function PrivacyPolicy() {
       <ul>
         <li>
           <strong>AI Training</strong>: Your responses to AI-generated questions
-          and, if permitted, location data may be used to improve our AI's
+          and, if permitted, location data may be used to improve our AI&apos;s
           question-generation capabilities, but only if you explicitly opt in
-          via the app's settings.
+          via the app&apos;s settings.
         </li>
         <li>
           <strong>Opt-Out</strong>: You can disable AI training at any time in
@@ -149,7 +149,7 @@ export default function PrivacyPolicy() {
         </li>
         <li>
           <strong>Transparency</strong>: We do not use your responses or
-          location data for purposes beyond improving Wander's AI unless you
+          location data for purposes beyond improving Wander&apos;s AI unless you
           consent.
         </li>
       </ul>
@@ -185,18 +185,18 @@ export default function PrivacyPolicy() {
       <ul>
         <li>
           <strong>Location Data</strong>: Manage location access via iOS
-          settings or Wander's privacy settings. You can deny, limit to
+          settings or Wander&apos;s privacy settings. You can deny, limit to
           approximate location, or revoke permission at any time, and Wander
           will stop collecting location data.
         </li>
         <li>
-          <strong>Account Deletion</strong>: Delete your account via the app's
+          <strong>Account Deletion</strong>: Delete your account via the app&apos;s
           settings to remove your posts, comments, location data, and personal
           data from our databases, subject to legal retention periods.
         </li>
         <li>
           <strong>Post Deletion</strong>: Delete individual posts at any time
-          using the "Delete" button, with immediate removal from public view.
+          using the &quot;Delete&quot; button, with immediate removal from public view.
         </li>
         <li>
           <strong>AI Training Opt-Out</strong>: Disable the use of your
@@ -207,7 +207,7 @@ export default function PrivacyPolicy() {
           using the unsubscribe link or app settings.
         </li>
         <li>
-          <strong>Tracking</strong>: Manage analytics tracking via the app's
+          <strong>Tracking</strong>: Manage analytics tracking via the app&apos;s
           privacy settings.
         </li>
       </ul>
@@ -243,7 +243,7 @@ export default function PrivacyPolicy() {
         </li>
       </ul>
 
-      <h2>9. Children's Privacy</h2>
+      <h2>9. Children&apos;s Privacy</h2>
       <ul>
         <li>
           Wander is not intended for children under 13 (or 16 in the EU, per
@@ -319,7 +319,7 @@ export default function PrivacyPolicy() {
         </li>
         <li>
           <strong>Other Jurisdictions</strong>: Similar rights may apply (e.g.,
-          under Canada's PIPEDA or Australia's Privacy Act).
+          under Canada&apos;s PIPEDA or Australia&apos;s Privacy Act).
         </li>
       </ul>
       <p>

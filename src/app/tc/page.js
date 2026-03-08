@@ -13,7 +13,7 @@ export default function TermsAndConditions() {
         Welcome to Wander, a social media platform where an AI generates
         questions for users to answer, creating posts that can be viewed by
         others. By using Wander, you agree to these Terms and Conditions
-        ("Terms"). If you do not agree, please do not use the app.
+        (&quot;Terms&quot;). If you do not agree, please do not use the app.
       </p>
 
       <h2>1. Acceptance of Terms</h2>
@@ -59,7 +59,7 @@ export default function TermsAndConditions() {
         </li>
         <li>
           <strong>Deletion</strong>: You may delete your posts at any time via
-          the app's interface. Deleted posts will be removed from public view
+          the app&apos;s interface. Deleted posts will be removed from public view
           and our databases, subject to legal retention requirements.
         </li>
         <li>
@@ -73,7 +73,7 @@ export default function TermsAndConditions() {
       <ul>
         <li>
           <strong>Reporting</strong>: You can report objectionable content
-          (e.g., hate speech, harassment) using the "Report" button on posts,
+          (e.g., hate speech, harassment) using the &quot;Report&quot; button on posts,
           comments, or profiles. Reports are reviewed within 48 hours, and you
           may be notified of the outcome.
         </li>
@@ -92,11 +92,11 @@ export default function TermsAndConditions() {
           always meet your preferences.
         </li>
         <li>
-          You may skip questions or provide feedback to improve the AI's
+          You may skip questions or provide feedback to improve the AI&apos;s
           prompts.
         </li>
         <li>
-          Your responses may be used to refine the AI's question-generation, but
+          Your responses may be used to refine the AI&apos;s question-generation, but
           only with your consent (see Privacy Policy).
         </li>
       </ul>
@@ -108,7 +108,7 @@ export default function TermsAndConditions() {
         <li>Engage in illegal or harmful behavior.</li>
         <li>Attempt to bypass moderation or security measures.</li>
       </ul>
-      <p>You may delete your account at any time via the app's settings.</p>
+      <p>You may delete your account at any time via the app&apos;s settings.</p>
 
       <h2>7. Intellectual Property</h2>
       <p>
@@ -118,7 +118,7 @@ export default function TermsAndConditions() {
       </p>
 
       <h2>8. Limitation of Liability</h2>
-      <p>Wander is provided "as is." We are not liable for:</p>
+      <p>Wander is provided &quot;as is.&quot; We are not liable for:</p>
       <ul>
         <li>User-generated content or interactions.</li>
         <li>Technical issues, data loss, or service interruptions.</li>
