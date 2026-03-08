@@ -46,7 +46,7 @@ export default function Index() {
         </motion.h2>
         <motion.p variants={opacity} animate={isInView ? "open" : "closed"}>
           Every day, you will receive a unique match tailored specifically for
-          you. Don't let this chance slip by connect with your daily match
+          you. Don&apos;t let this chance slip by connect with your daily match
           within 24 hours.
         </motion.p>
       </div>

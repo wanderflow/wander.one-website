@@ -160,7 +160,7 @@ export default function CommunityGuidelines() {
           </ul>
         </li>
         <li>
-          Your responses \"may be used to refine the AI, but only with your
+          Your responses &quot;may be used to refine the AI, but only with your
           consent (see Privacy Policy, Section 4).
         </li>
       </ul>

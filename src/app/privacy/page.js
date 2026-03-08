@@ -111,7 +111,7 @@ export default function PrivacyPolicy() {
         <li>
           <strong>Purpose</strong>: We use your location data to generate
           contextually relevant AI questions (e.g., &quot;What&apos;s your favorite local
-          cafe?" based on your city). Location data enhances the relevance of
+          cafe?&quot; based on your city). Location data enhances the relevance of
           questions but is not required to use Wander.
         </li>
         <li>

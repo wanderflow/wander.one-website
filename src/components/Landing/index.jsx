@@ -41,7 +41,7 @@ export default function Index() {
         videoRef.current.play();
       }
     }
-  }, [isInView]);
+  }, [isInView, showVideo]);
 
   return (
     <main ref={container} className={styles.landing}>

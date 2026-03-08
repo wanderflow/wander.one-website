@@ -5,7 +5,7 @@ import styles from "./style.module.scss";
 import { useInView, motion } from "framer-motion";
 import { useRef, useEffect } from "react";
 import { slideUp } from "./animation";
-export default function index() {
+export default function Index() {
   const container = useRef(null);
   const videoRef = useRef(null);
   const isInView = useInView(container, {
