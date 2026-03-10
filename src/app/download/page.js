@@ -18,7 +18,7 @@ export default function DownloadPage() {
 
   return (
     <main ref={topRef} className={styles.page}>
-      <Header refs={refs} logoSrc="/images/logo_white.png" logoSrcScrolled="/wander.png" />
+      <Header refs={refs} logoSrc="/images/wander_logo_colorful.png" logoSrcScrolled="/images/wander_logo_colorful.png" />
       <DownloadLanding />
     </main>
   );
