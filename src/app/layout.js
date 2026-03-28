@@ -1,9 +1,15 @@
 import "./globals.css";
-import { Nunito } from "next/font/google";
+import { Nunito, Magra } from "next/font/google";
 
 const NunitoFont = Nunito({
   subsets: ["latin"],
   weight: ["300", "400", "500", "700"],
+});
+
+const MagraFont = Magra({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-magra",
 });
 
 export const metadata = {
@@ -19,7 +25,7 @@ export default function RootLayout({ children }) {
         <link rel="icon" href="/wander.png" />
         <meta name="apple-itunes-app" content="app-id=6474634049" />
       </head>
-      <body className={NunitoFont.className}>{children}</body>
+      <body className={`${NunitoFont.className} ${MagraFont.variable}`}>{children}</body>
     </html>
   );
 }
