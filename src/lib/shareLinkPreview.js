@@ -4,8 +4,8 @@
  * 2) 常见爬虫 User-Agent（尽力而为；部分客户端 UA 与普通浏览器无异）
  */
 
-/** 标题里的是全角竖线「｜」，仅作视觉分隔，不是「或者」 */
-export const SHARE_TITLE_BAR = "｜";
+/** 标题格式与 OGP 规范一致：「群主题 | Wander」（半角竖线） */
+export const SHARE_TITLE_BAR = "|";
 
 const DISPLAY_HOST = process.env.NEXT_PUBLIC_WANDER_WEB_HOST || "wander.one";
 
@@ -55,7 +55,7 @@ export function resolveSharePreviewBucket(searchParams, userAgent) {
 }
 
 /**
- * 例：Dinner tonight 🍝 ｜ Wander（「｜」两侧可各留半角空格，便于阅读）
+ * 例：Dinner tonight 🍝 | Wander
  */
 export function buildShareOgTitle(subject) {
   const s = subject && String(subject).trim();

@@ -1,4 +1,9 @@
+import { headers } from "next/headers";
 import DownloadLanding from "@/components/DownloadLanding";
+import {
+  buildSharePageMetadata,
+  firstQuery,
+} from "@/lib/buildSharePageMetadata";
 import styles from "./page.module.scss";
 
 const DEFAULT_CHANNEL_URL = "group_quarter_life_crisis_support_group_c2b20867";
@@ -8,7 +13,7 @@ const title = "Get Wander";
 const description =
   "Explore trending topics in your community and connect with people who share your interests.";
 
-export const metadata = {
+const defaultMetadata = {
   title,
   description,
   alternates: { canonical: "/download" },
@@ -27,6 +32,22 @@ export const metadata = {
     images: ["/images/wander_logo_colorful.png"],
   },
 };
+
+export async function generateMetadata({ searchParams }) {
+  const params = (await searchParams) ?? {};
+  const slug = firstQuery(params.slug);
+  if (!slug) {
+    return defaultMetadata;
+  }
+
+  const headerList = await headers();
+  return buildSharePageMetadata({
+    slug,
+    inviteCode: firstQuery(params.invite_code),
+    resolvedSearch: params,
+    headerList,
+  });
+}
 
 export default async function DownloadPage({ searchParams }) {
   const params = (await searchParams) ?? {};
