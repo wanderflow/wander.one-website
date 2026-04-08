@@ -51,8 +51,8 @@ export async function generateMetadata({ searchParams }) {
 
 export default async function DownloadPage({ searchParams }) {
   const params = (await searchParams) ?? {};
-  const slug = params.slug || "";
-  const inviteCode = params.invite_code || "";
+  const slug = firstQuery(params.slug);
+  const inviteCode = firstQuery(params.invite_code);
 
   return (
     <main className={styles.page}>
