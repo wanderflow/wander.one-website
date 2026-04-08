@@ -1,8 +1,11 @@
 /**
- * Link unfurl (OG) is one HTML response per URL. To vary copy per “channel family” we use:
- * 1) Query param (reliable): ?share_style=messaging | social  (short: ?ss=m | ss=s)
- * 2) User-Agent hints for known crawlers (best-effort; iMessage often looks like Safari)
+ * 同一 URL 只有一套 OG meta。按渠道分开展示依赖：
+ * 1) 查询参数（推荐）：?share_style=messaging 或 ?share_style=social，简写 ?ss=m / ?ss=s
+ * 2) 常见爬虫 User-Agent（尽力而为；部分客户端 UA 与普通浏览器无异）
  */
+
+/** 标题里的是全角竖线「｜」，仅作视觉分隔，不是「或者」 */
+export const SHARE_TITLE_BAR = "｜";
 
 const DISPLAY_HOST = process.env.NEXT_PUBLIC_WANDER_WEB_HOST || "wander.one";
 
@@ -21,7 +24,7 @@ function normalizeParam(value) {
 /**
  * @param {Record<string, string | string[] | undefined> | undefined} searchParams
  * @param {string | null} userAgent
- * @returns {"messaging" | "social"}
+ * @returns {"messaging" 或 "social"}
  */
 export function resolveSharePreviewBucket(searchParams, userAgent) {
   const style = normalizeParam(searchParams?.share_style);
@@ -51,8 +54,11 @@ export function resolveSharePreviewBucket(searchParams, userAgent) {
   return "messaging";
 }
 
+/**
+ * 例：Dinner tonight 🍝 ｜ Wander（「｜」两侧可各留半角空格，便于阅读）
+ */
 export function buildShareOgTitle(subject) {
   const s = subject && String(subject).trim();
   const head = s || "Join a group";
-  return `${head} | Wander`;
+  return `${head} ${SHARE_TITLE_BAR} Wander`;
 }
