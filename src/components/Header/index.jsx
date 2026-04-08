@@ -4,7 +4,9 @@ import styles from "./style.module.scss";
 import Image from "next/image";
 
 export default function Index({ refs, logoSrc, logoSrcScrolled }) {
-  const [currentLogoSrc, setCurrentLogoSrc] = useState(logoSrc || "/wander.png");
+  const [currentLogoSrc, setCurrentLogoSrc] = useState(
+    logoSrc || "/images/wander_logo_colorful.png",
+  );
 
   useEffect(() => {
     const handleScroll = () => {
@@ -14,7 +16,8 @@ export default function Index({ refs, logoSrc, logoSrcScrolled }) {
         if (logoSrcScrolled != null) setCurrentLogoSrc(logoSrcScrolled);
       } else {
         header.classList.remove(styles.scrolled);
-        if (logoSrcScrolled != null) setCurrentLogoSrc(logoSrc || "/wander.png");
+        if (logoSrcScrolled != null)
+          setCurrentLogoSrc(logoSrc || "/images/wander_logo_colorful.png");
       }
     };
 
