@@ -452,7 +452,7 @@ export default function DownloadLanding({ slug, inviteCode, channelUrl, userId }
         </div>
         <div className={styles.footerRight}>
           <Link
-            href="https://www.instagram.com/wanderforsocial/"
+            href="https://www.instagram.com/wanderwithnewfriends/"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Instagram"
