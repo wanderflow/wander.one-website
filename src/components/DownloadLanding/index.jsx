@@ -465,7 +465,7 @@ export default function DownloadLanding({ slug, inviteCode, channelUrl, userId }
               className={styles.socialIcon}
             />
           </Link>
-          <Link
+          <a
             href="mailto:quinn@wander.one"
             aria-label="Email"
           >
@@ -476,7 +476,7 @@ export default function DownloadLanding({ slug, inviteCode, channelUrl, userId }
               height={30}
               className={styles.socialIcon}
             />
-          </Link>
+          </a>
         </div>
       </footer>
     </div>
