@@ -354,8 +354,8 @@ export default function DownloadLanding({ slug, inviteCode, channelUrl, userId }
         <div className={styles.downloadCard}>
           <p className={styles.downloadText}>
             {isShareMode
-              ? "Welcome! To join the group, please download the app and use the code provided :)"
-              : "Welcome! To join the group, please download the app:)"}
+              ? "Wander finds the right people to plan your next hangout. Download the app and enter the code to join!"
+              : "Wander finds the right people to plan your next hangout. Download the app and enter the code to join!"}
           </p>
 
           {isShareMode && inviteCode && (
@@ -446,7 +446,7 @@ export default function DownloadLanding({ slug, inviteCode, channelUrl, userId }
               className={styles.footerSlogan}
               style={{ backgroundImage: GRADIENT_CSS }}
             >
-              Find your group with Wander
+              Wander finds the gang to plan your hangout
             </span>
           </div>
         </div>
