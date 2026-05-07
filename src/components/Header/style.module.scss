@@ -1,112 +1,133 @@
 .header {
   position: fixed;
   top: 0;
-  width: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 0 clamp(0.75rem, 3vw, 1.25rem);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
+.inner {
+  max-width: 1120px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 35px;
-  z-index: 9999;
-  color: #484848;
-  font-size: 16px;
+  min-height: var(--nav-height);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.logoMark {
+  width: clamp(30px, 5vw, 40px);
+  height: clamp(30px, 5vw, 40px);
+  border-radius: 12px;
+  flex-shrink: 0;
+  display: block;
+  object-fit: contain;
+}
+
+.wordmark {
   font-weight: 700;
-  box-sizing: border-box;
-  background-color: transparent;
-  transition: background-color 0.3s ease;
+  font-size: clamp(0.98rem, 1.3vw + 0.72rem, 1.15rem);
+  letter-spacing: -0.03em;
+  background: linear-gradient(
+    95deg,
+    #0284c7 0%,
+    #7c3aed 50%,
+    #ea580c 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 
-  .logo {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
-    .name {
-      display: flex;
-      position: relative;
-      overflow: hidden;
-      white-space: nowrap;
-      margin-left: 15px;
-      transition: all 0.5s cubic-bezier(0.76, 0, 0.24, 1);
+.iconLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(34px, 5.2vw, 40px);
+  height: clamp(34px, 5.2vw, 40px);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  transition: color 0.2s ease, background 0.2s ease;
+}
 
-      p {
-        position: relative;
-        transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
-      }
-    }
+.iconLink:hover {
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.06);
+}
 
- 
+.ig {
+  width: clamp(18px, 3vw, 22px);
+  height: clamp(18px, 3vw, 22px);
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.125rem;
+  padding: clamp(0.42rem, 1.5vw, 0.55rem) clamp(0.85rem, 2.8vw, 1.1rem);
+  margin-left: 0.25rem;
+  border-radius: var(--radius-pill);
+  font-size: clamp(0.78rem, 0.8vw + 0.62rem, 0.9rem);
+  font-weight: 600;
+  text-decoration: none;
+  color: #fafafa;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #0f0f0f;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.cta:hover {
+  background: #1c1c1c;
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.cta:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 3px;
+}
+
+@media (max-width: 439.98px) {
+  .brand {
+    gap: 0.45rem;
+  }
+
+  .wordmark {
+    display: none;
   }
 
   .nav {
-    display: flex;
-    align-items: center;
-    gap: 25px;
-
-    .el {
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      padding: 15px;
-      cursor: pointer;
-    }
-
-    a {
-      cursor: pointer;
-    }
-
-    .button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 120px;
-      height: 45px;
-      margin-left: 20px;
-      border: 2px solid #686868;
-      border-radius: 40px;
-      cursor: pointer;
-
-      p {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 700;
-        position: relative;
-        z-index: 2;
-      }
-    }
+    gap: 0.35rem;
   }
-}
 
-.header.scrolled {
-  background-color: white; /* 滚动时的背景颜色 */
-}
-
-/* Media Queries */
-
-/* 2xl */
-@media (max-width: 1536px) {}
-
-/* xl */
-@media (max-width: 1280px) {}
-
-/* lg */
-@media (max-width: 1024px) {}
-
-/* md */
-@media (max-width: 768px) {}
-
-/* sm */
-@media (max-width: 640px) {
-  .header {
-    .nav {
-      display: none;
-    }
-  }
-}
-
-/* xs */
-@media (max-width: 475px) {
-  .header {
-    .nav {
-      display: none;
-    }
+  .cta {
+    margin-left: 0;
   }
 }

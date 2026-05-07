@@ -1,0 +1,76 @@
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+.pill {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+  box-sizing: border-box;
+  padding: 0.35em 1.1em 0.42em;
+  min-height: 1.45em;
+  border-radius: var(--radius-pill);
+  border: 2px solid transparent;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(
+        100deg,
+        #35b7ff 0%,
+        #4f7ff5 22%,
+        #9653ec 45%,
+        #d84ec2 66%,
+        #f25b89 82%,
+        #ff9a1f 100%
+      )
+      border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.pillSizer {
+  display: block;
+  visibility: hidden;
+  height: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--font-lazy-dog);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  user-select: none;
+}
+
+.word {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) translateY(10px);
+  opacity: 0;
+  white-space: nowrap;
+  font-family: var(--font-lazy-dog);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: #0f0f0f;
+  transition:
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wordActive {
+  opacity: 1;
+  transform: translate(-50%, -50%) translateY(0);
+}
+
+.wordStatic {
+  position: relative;
+  font-family: var(--font-lazy-dog);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: #0f0f0f;
+  white-space: nowrap;
+  text-align: inherit;
+  line-height: 1.3;
+}

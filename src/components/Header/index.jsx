@@ -1,89 +1,75 @@
 "use client";
-import { useEffect, useState } from "react";
-import styles from "./style.module.scss";
-import Image from "next/image";
+import Link from 'next/link'
+import Image from 'next/image'
+import styles from './style.module.scss'
+import { getAppStoreUrl } from '@/utils/getAppStoreUrl'
 
-export default function Index({ refs, logoSrc, logoSrcScrolled }) {
-  const [currentLogoSrc, setCurrentLogoSrc] = useState(
-    logoSrc || "/images/wander_logo_colorful.png",
-  );
+const INSTAGRAM_URL = 'https://www.instagram.com/wanderwithnewfriends/'
+const LOGO_MARK_SRC = '/images/wander-logo-mark.png'
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const header = document.querySelector(`.${styles.header}`);
-      if (window.scrollY > 50) {
-        header.classList.add(styles.scrolled);
-        if (logoSrcScrolled != null) setCurrentLogoSrc(logoSrcScrolled);
-      } else {
-        header.classList.remove(styles.scrolled);
-        if (logoSrcScrolled != null)
-          setCurrentLogoSrc(logoSrc || "/images/wander_logo_colorful.png");
-      }
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [logoSrc, logoSrcScrolled]);
-
-  const scrollToSection = (sectionRef) => {
-    if (sectionRef?.current) {
-      sectionRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
-  };
-
+export default function Header() {
   return (
-    <>
-      <div className={styles.header}>
-        <div
-          className={styles.logo}
-          onClick={() => refs?.landingRef && scrollToSection(refs.landingRef)}
-        >
+    <header className={styles.header}>
+      <div className={styles.inner}>
+        <Link href="/" className={styles.brand}>
           <Image
-            width={35}
-            height={35}
-            alt="Wander"
-            src={currentLogoSrc}
+            src={LOGO_MARK_SRC}
+            alt=""
+            width={40}
+            height={40}
+            className={styles.logoMark}
           />
-          <div className={styles.name}>
-            <p className={styles.codeBy}>Wander</p>
-          </div>
-        </div>
-        <div className={styles.nav}>
-          <div
-            className={styles.el}
-            onClick={() => scrollToSection(refs.descriptionRef)}
-          >
-            <a>About Us</a>
-          </div>
+          <span className={styles.wordmark}>Wander</span>
+        </Link>
 
-          <div
-            className={styles.el}
-            onClick={() => scrollToSection(refs.contactRef)}
+        <nav className={styles.nav} aria-label="Primary">
+          <a
+            href={INSTAGRAM_URL}
+            className={styles.iconLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Wander on Instagram (opens in a new tab)"
           >
-            <a>Contact</a>
-          </div>
-          <div
-            className={styles.el}
-            onClick={() => scrollToSection(refs.contactRef)}
+            <InstagramGlyph />
+          </a>
+          <a
+            href="#"
+            className={styles.cta}
+            onClick={(e) => {
+              e.preventDefault()
+              window.open(getAppStoreUrl(), '_blank')
+            }}
           >
-            <a>Reviews</a>
-          </div>
-
-          <div
-            className={styles.button}
-            onClick={() => scrollToSection(refs.downloadRef)}
-          >
-            <p>Download</p>
-          </div>
-        </div>
+            Download
+          </a>
+        </nav>
       </div>
-    </>
-  );
+    </header>
+  )
+}
+
+function InstagramGlyph() {
+  return (
+    <svg
+      className={styles.ig}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path
+        d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <circle
+        cx="12"
+        cy="12"
+        r="4.2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <circle cx="17.3" cy="6.7" r="1.2" fill="currentColor" />
+    </svg>
+  )
 }

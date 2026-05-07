@@ -1,0 +1,138 @@
+.page {
+  min-height: 100svh;
+  background: #fafafa;
+  color: #171717;
+}
+
+.main {
+  padding: calc(var(--nav-height) + clamp(1.05rem, 3.8vw, 2.5rem)) clamp(0.9rem, 4vw, 1.25rem)
+    clamp(2.5rem, 6vw, 4rem);
+}
+
+.inner {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: clamp(2rem, 5vw, 3rem);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw + 0.5rem, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.subtitle {
+  margin: 0.65rem auto 0;
+  max-width: 28rem;
+  font-size: clamp(1rem, 1.2vw + 0.85rem, 1.15rem);
+  color: var(--text-muted);
+  font-weight: 500;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.category {
+  margin-top: clamp(2.25rem, 5vw, 3rem);
+
+  &:first-of-type {
+    margin-top: 0;
+  }
+}
+
+.categoryTitle {
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.card {
+  display: block;
+  padding: clamp(0.82rem, 2.2vw, 1rem) clamp(0.9rem, 2.3vw, 1.1rem);
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.card:hover {
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+  transform: translateY(-2px);
+}
+
+.card:focus-visible {
+  outline: 3px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: clamp(0.92rem, 0.9vw + 0.74rem, 0.98rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.cardBlurb {
+  margin: 0.4rem 0 0;
+  font-size: clamp(0.8rem, 0.8vw + 0.65rem, 0.85rem);
+  line-height: 1.5;
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+.bottom {
+  margin-top: clamp(2.5rem, 6vw, 3.5rem);
+  padding: 1.5rem 1.25rem;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  text-align: center;
+}
+
+.bottomTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.bottomLink {
+  display: inline-block;
+  margin-top: 0.65rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #6366f1;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
