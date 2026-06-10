@@ -1,13 +1,11 @@
 import { headers } from "next/headers";
 import DownloadLanding from "@/components/DownloadLanding";
+import DownloadRedirect from "@/components/DownloadRedirect";
 import {
   buildSharePageMetadata,
   firstQuery,
 } from "@/lib/buildSharePageMetadata";
 import styles from "./page.module.scss";
-
-const DEFAULT_CHANNEL_URL = "group_quarter_life_crisis_support_group_c2b20867";
-const DEFAULT_USER_ID = "user_2bmyvhCgC9EiYoN1y8tlCWmi9wh";
 
 const title = "Get Wander";
 const description =
@@ -54,14 +52,17 @@ export default async function DownloadPage({ searchParams }) {
   const slug = firstQuery(params.slug);
   const inviteCode = firstQuery(params.invite_code);
 
+  if (!slug) {
+    return (
+      <main className={styles.page}>
+        <DownloadRedirect />
+      </main>
+    );
+  }
+
   return (
     <main className={styles.page}>
-      <DownloadLanding
-        slug={slug}
-        inviteCode={inviteCode}
-        channelUrl={slug ? undefined : DEFAULT_CHANNEL_URL}
-        userId={slug ? undefined : DEFAULT_USER_ID}
-      />
+      <DownloadLanding slug={slug} inviteCode={inviteCode} />
     </main>
   );
 }

@@ -1,4 +1,5 @@
-const API_URL = "https://api.wander.one/ai-topics/invite_links/detail";
+const API_BASE_URL = process.env.WANDER_API_BASE_URL || "https://api.wander.one";
+const API_URL = `${API_BASE_URL}/ai-topics/invite_links/detail`;
 
 export async function POST(request) {
   try {

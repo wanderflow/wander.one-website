@@ -1,5 +1,6 @@
 import "./globals.css";
 import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -36,24 +37,26 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="icon" href="/images/wander_logo_colorful.png" />
-        <link rel="apple-touch-icon" href="/images/wander_logo_colorful.png" />
-        <meta name="apple-itunes-app" content="app-id=6474634049" />
-        <link
-          rel="preconnect"
-          href="https://fonts.cdnfonts.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.cdnfonts.com/css/lazy-dog"
-          rel="stylesheet"
-        />
-      </head>
-      <body className={`${plusJakartaSans.className} ${outfit.variable}`}>
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <head>
+          <link rel="icon" href="/images/wander_logo_colorful.png" />
+          <link rel="apple-touch-icon" href="/images/wander_logo_colorful.png" />
+          <meta name="apple-itunes-app" content="app-id=6474634049" />
+          <link
+            rel="preconnect"
+            href="https://fonts.cdnfonts.com"
+            crossOrigin="anonymous"
+          />
+          <link
+            href="https://fonts.cdnfonts.com/css/lazy-dog"
+            rel="stylesheet"
+          />
+        </head>
+        <body className={`${plusJakartaSans.className} ${outfit.variable}`}>
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
