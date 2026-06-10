@@ -1,12 +1,10 @@
 "use client";
-import Link from 'next/link'
 import Image from 'next/image'
 import { UPCOMING_EVENTS } from '@/data/events'
 import { getAppStoreUrl } from '@/utils/getAppStoreUrl'
 import styles from './style.module.scss'
 
 const MAX_VISIBLE_EVENTS = 4
-const FIRST_CARD_HREF = '/share/hg7mlujl7i?invite_code=1563'
 
 export default function EventGallery() {
   const visibleEvents = UPCOMING_EVENTS.slice(0, MAX_VISIBLE_EVENTS)
@@ -28,8 +26,7 @@ export default function EventGallery() {
         </header>
 
         <ul className={styles.grid}>
-          {visibleEvents.map((event, i) => {
-            const isFirst = i === 0
+          {visibleEvents.map((event) => {
             const cardContent = (
               <>
                 <div className={styles.posterFrame}>
@@ -51,17 +48,7 @@ export default function EventGallery() {
 
             return (
               <li key={event.id} className={styles.gridItem}>
-                {isFirst ? (
-                  <Link
-                    href={FIRST_CARD_HREF}
-                    className={styles.card}
-                    aria-label={`${event.title}, ${event.dateLabel}, ${event.locationLabel}`}
-                  >
-                    {cardContent}
-                  </Link>
-                ) : (
-                  <div className={styles.card}>{cardContent}</div>
-                )}
+                <div className={styles.card}>{cardContent}</div>
               </li>
             )
           })}
