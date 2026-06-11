@@ -31,7 +31,7 @@ function EventCard({
         </p>
         <button
           type="button"
-          onClick={onStoreOpen}
+          onClick={() => onStoreOpen("pending")}
           className={styles.primaryButton}
         >
           Complete your profile
@@ -52,7 +52,7 @@ function EventCard({
         </p>
         <button
           type="button"
-          onClick={onStoreOpen}
+          onClick={() => onStoreOpen("confirmation")}
           className={styles.primaryButton}
         >
           Enter Chat
@@ -281,7 +281,7 @@ export default function EventScreen({
           >
             <button
               type="button"
-              onClick={onStoreOpen}
+              onClick={() => onStoreOpen("detail")}
               className={styles.downloadBtnInner}
             >
               <span
