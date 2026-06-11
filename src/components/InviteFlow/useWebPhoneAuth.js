@@ -142,7 +142,6 @@ export function useWebPhoneAuth() {
           try {
             await signUp.create({
               phoneNumber: fullPhoneNumber,
-              firstName: profile?.name?.trim() || undefined,
             });
           } catch (signUpError) {
             logClerkError("sign-up start failed", signUpError);

@@ -2,8 +2,9 @@ import { DEFAULT_OTP_CODE } from "./constants";
 
 export const FLOW_VIEW = {
   EVENT: "event",
-  IDENTITY: "identity",
+  PHONE: "phone",
   OTP: "otp",
+  NAME: "name",
   QUESTIONS: "questions",
   RESULT: "result",
 };
@@ -82,14 +83,6 @@ export function resolveEventCardFromResult(resultKind) {
   return EVENT_CARD.JOIN;
 }
 
-function resolveResultAfterOtp({ rsvpIntent, hasQuestions }) {
-  if (rsvpIntent === "going" || rsvpIntent === "maybe") {
-    return hasQuestions ? FLOW_VIEW.QUESTIONS : RESULT_KIND.DIRECT_JOIN;
-  }
-
-  return RESULT_KIND.CANT_GO;
-}
-
 export function inviteFlowReducer(state, action) {
   switch (action.type) {
     case "OPEN_RSVP":
@@ -113,7 +106,7 @@ export function inviteFlowReducer(state, action) {
     case "CONTINUE_FROM_RSVP":
       return {
         ...state,
-        view: FLOW_VIEW.IDENTITY,
+        view: FLOW_VIEW.PHONE,
       };
 
     case "UPDATE_PROFILE":
@@ -125,10 +118,26 @@ export function inviteFlowReducer(state, action) {
         },
       };
 
-    case "CONTINUE_FROM_IDENTITY":
+    case "CONTINUE_FROM_PHONE":
       return {
         ...state,
         view: FLOW_VIEW.OTP,
+      };
+
+    case "CONTINUE_TO_NAME":
+      return {
+        ...state,
+        view: FLOW_VIEW.NAME,
+        profile: {
+          ...state.profile,
+          name: action.name ?? state.profile.name,
+        },
+      };
+
+    case "CONTINUE_TO_QUESTIONS":
+      return {
+        ...state,
+        view: FLOW_VIEW.QUESTIONS,
       };
 
     case "UPDATE_OTP":
@@ -136,26 +145,6 @@ export function inviteFlowReducer(state, action) {
         ...state,
         otpCode: action.otpCode,
       };
-
-    case "CONTINUE_FROM_OTP": {
-      const next = resolveResultAfterOtp({
-        rsvpIntent: state.rsvpIntent,
-        hasQuestions: action.hasQuestions,
-      });
-
-      if (next === FLOW_VIEW.QUESTIONS) {
-        return {
-          ...state,
-          view: FLOW_VIEW.QUESTIONS,
-        };
-      }
-
-      return {
-        ...state,
-        view: FLOW_VIEW.RESULT,
-        resultKind: next,
-      };
-    }
 
     case "UPDATE_ANSWER":
       return {
@@ -188,7 +177,7 @@ export function inviteFlowReducer(state, action) {
       };
 
     case "BACK": {
-      if (state.view === FLOW_VIEW.IDENTITY) {
+      if (state.view === FLOW_VIEW.PHONE) {
         return {
           ...state,
           view: FLOW_VIEW.EVENT,
@@ -199,7 +188,14 @@ export function inviteFlowReducer(state, action) {
       if (state.view === FLOW_VIEW.OTP) {
         return {
           ...state,
-          view: FLOW_VIEW.IDENTITY,
+          view: FLOW_VIEW.PHONE,
+        };
+      }
+
+      if (state.view === FLOW_VIEW.NAME) {
+        return {
+          ...state,
+          view: FLOW_VIEW.OTP,
         };
       }
 

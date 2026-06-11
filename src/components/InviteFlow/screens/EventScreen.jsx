@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { RSVP_OPTIONS } from "../constants";
@@ -14,6 +15,8 @@ function EventCard({
   onResetToJoin,
   hostName,
   isJoining = false,
+  joinCardRef = null,
+  error = "",
 }) {
   if (eventCard === "pending") {
     return (
@@ -124,7 +127,7 @@ function EventCard({
   }
 
   return (
-    <section className={styles.joinCard}>
+    <section ref={joinCardRef} className={styles.joinCard}>
       <h2 className={styles.joinCardTitle}>See who&apos;s going</h2>
       <p className={styles.joinCardText}>
         Join the list to see everyone attending {eventTitle}.
@@ -138,6 +141,7 @@ function EventCard({
         {isJoining && <span className={styles.buttonSpinner} aria-hidden="true" />}
         <span>{isJoining ? "Loading..." : "Join"}</span>
       </button>
+      {error && <p className={styles.flowError}>{error}</p>}
     </section>
   );
 }
@@ -149,6 +153,7 @@ function RsvpModal({
   onContinueRsvp,
   onClose,
   isSubmitting = false,
+  error = "",
 }) {
   return (
     <div
@@ -197,6 +202,7 @@ function RsvpModal({
           {isSubmitting && <span className={styles.buttonSpinner} aria-hidden="true" />}
           <span>{isSubmitting ? "Loading..." : "Next"}</span>
         </button>
+        {error && <p className={styles.flowError}>{error}</p>}
       </section>
     </div>
   );
@@ -224,8 +230,31 @@ export default function EventScreen({
   onResetToJoin,
   isJoining = false,
   isSubmittingRsvp = false,
+  error = "",
 }) {
   const isRsvpModalOpen = eventCard === "rsvp";
+  const showFloatingJoin = eventCard === "join" && !isRsvpModalOpen;
+  const joinCardRef = useRef(null);
+  const [isJoinCardVisible, setIsJoinCardVisible] = useState(false);
+
+  useEffect(() => {
+    if (!showFloatingJoin || !joinCardRef.current) {
+      setIsJoinCardVisible(false);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsJoinCardVisible(Boolean(entry?.isIntersecting));
+      },
+      {
+        threshold: 0.2,
+      },
+    );
+
+    observer.observe(joinCardRef.current);
+    return () => observer.disconnect();
+  }, [showFloatingJoin]);
 
   return (
     <div className={styles.eventViewport}>
@@ -401,6 +430,8 @@ export default function EventScreen({
               onResetToJoin={onResetToJoin}
               hostName={hostName}
               isJoining={isJoining}
+              joinCardRef={joinCardRef}
+              error={error}
             />
           )}
         </div>
@@ -454,6 +485,26 @@ export default function EventScreen({
         )}
       </div>
 
+      {showFloatingJoin && (
+        <div
+          className={
+            isJoinCardVisible
+              ? `${styles.floatingJoinBar} ${styles.floatingJoinBarHidden}`
+              : styles.floatingJoinBar
+          }
+        >
+          <button
+            type="button"
+            onClick={onJoin}
+            className={styles.floatingJoinButton}
+            disabled={isJoining}
+          >
+            {isJoining && <span className={styles.buttonSpinner} aria-hidden="true" />}
+            <span>{isJoining ? "Loading..." : "Join"}</span>
+          </button>
+        </div>
+      )}
+
       {isRsvpModalOpen && (
         <RsvpModal
           styles={styles}
@@ -462,6 +513,7 @@ export default function EventScreen({
           onContinueRsvp={onContinueRsvp}
           onClose={onResetToJoin}
           isSubmitting={isSubmittingRsvp}
+          error={error}
         />
       )}
     </div>

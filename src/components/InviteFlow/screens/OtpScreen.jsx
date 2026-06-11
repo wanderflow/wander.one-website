@@ -10,7 +10,10 @@ export default function OtpScreen({
   onResend,
   isSubmitting = false,
   error = "",
+  resendCooldown = 0,
 }) {
+  const isResendDisabled = isSubmitting || resendCooldown > 0;
+
   return (
     <>
       <div className={styles.flowTopBar}>
@@ -58,9 +61,9 @@ export default function OtpScreen({
               type="button"
               className={styles.inlineButton}
               onClick={onResend}
-              disabled={isSubmitting}
+              disabled={isResendDisabled}
             >
-              Resend Code
+              {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : "Resend Code"}
             </button>
           </p>
           {error && <p className={styles.flowError}>{error}</p>}
