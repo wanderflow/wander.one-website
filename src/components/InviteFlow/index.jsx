@@ -7,6 +7,7 @@ import {
   buildDefaultAnswers,
   canUseBrowserJoinFlow,
   createFlowState,
+  EVENT_CARD,
   FLOW_VIEW,
   inviteFlowReducer,
 } from "./machine";
@@ -19,7 +20,8 @@ import {
 } from "./utils";
 import ScreenFrame from "./shared/ScreenFrame";
 import EventScreen from "./screens/EventScreen";
-import IdentityScreen from "./screens/IdentityScreen";
+import PhoneScreen from "./screens/PhoneScreen";
+import NameScreen from "./screens/NameScreen";
 import OtpScreen from "./screens/OtpScreen";
 import QuestionsScreen from "./screens/QuestionsScreen";
 import ResultScreen from "./screens/ResultScreen";
@@ -34,7 +36,26 @@ import {
   submitWebAnswers,
   updateWebRsvp,
 } from "./api";
+import {
+  buildInviteTrackingContext,
+  trackWebJoinEvent,
+} from "./tracking";
 import { useWebPhoneAuth } from "./useWebPhoneAuth";
+
+function smsFailureReason(error) {
+  const message = String(error?.message || error || "").toLowerCase();
+  if (message.includes("too many") || message.includes("max")) return "max_attempts";
+  if (message.includes("timeout") || message.includes("expired")) return "timeout";
+  return "invalid_code";
+}
+
+function resultKindToOutcome(resultKind) {
+  if (resultKind === "approved" || resultKind === "direct_join") return "confirmed";
+  if (resultKind === "pending") return "pending";
+  if (resultKind === "cant_go") return "cant_go";
+  if (resultKind === "rejected") return "rejected";
+  return "confirmed";
+}
 
 export default function InviteFlow({ slug, inviteCode }) {
   const [invite, setInvite] = useState(null);
@@ -42,23 +63,24 @@ export default function InviteFlow({ slug, inviteCode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reloadToken, setReloadToken] = useState(0);
-  const [toast, setToast] = useState(null);
+  const [actionError, setActionError] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [verifiedClerkUserId, setVerifiedClerkUserId] = useState(null);
+  const [joinedAsName, setJoinedAsName] = useState("");
   const [pendingAction, setPendingAction] = useState(null);
   const [flowState, dispatch] = useReducer(inviteFlowReducer, undefined, createFlowState);
-  const toastTimerRef = useRef(null);
+  const pageViewTrackedKeyRef = useRef("");
+  const funnelStartedAtRef = useRef(null);
+  const smsAttemptCountRef = useRef(0);
+  const isReturningUserRef = useRef(false);
   const webPhoneAuth = useWebPhoneAuth();
 
   const isShareMode = Boolean(slug);
+  const isRsvpModalOpen = flowState.view === FLOW_VIEW.EVENT &&
+    flowState.eventCard === EVENT_CARD.RSVP;
 
-  const showToast = useCallback((message) => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    setToast(message);
-    toastTimerRef.current = setTimeout(() => setToast(null), 2000);
-  }, []);
-
-  const handleStoreOpen = useCallback(() => {
-    window.open(getAppStoreUrl(), "_blank", "noopener,noreferrer");
+  const showError = useCallback((message) => {
+    setActionError(message || "Something went wrong. Please try again.");
   }, []);
 
   useEffect(() => {
@@ -111,6 +133,42 @@ export default function InviteFlow({ slug, inviteCode }) {
     webPhoneAuth.isLoaded,
   ]);
 
+  useEffect(() => {
+    if (!isRsvpModalOpen) return undefined;
+
+    const scrollY = window.scrollY;
+    const previousBodyStyles = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+    };
+    const previousHtmlOverscroll = document.documentElement.style.overscrollBehavior;
+
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    document.documentElement.style.overscrollBehavior = "none";
+
+    return () => {
+      document.body.style.overflow = previousBodyStyles.overflow;
+      document.body.style.position = previousBodyStyles.position;
+      document.body.style.top = previousBodyStyles.top;
+      document.body.style.width = previousBodyStyles.width;
+      document.documentElement.style.overscrollBehavior = previousHtmlOverscroll;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isRsvpModalOpen]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined;
+    const timerId = window.setTimeout(() => {
+      setResendCooldown((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearTimeout(timerId);
+  }, [resendCooldown]);
+
   const joinQuestions = useMemo(
     () => invite?.join_questions ?? [],
     [invite],
@@ -134,6 +192,112 @@ export default function InviteFlow({ slug, inviteCode }) {
   const displayMembers = invite?.members?.slice(0, 4) ?? [];
   const attendeeCount = invite?.member_count ?? invite?.members?.length ?? 0;
   const eventTitle = invite?.subject || "Wander event";
+  const hasQuestions = joinQuestions.length > 0;
+  const verifiedUserId = verifiedClerkUserId || webPhoneAuth.clerkUserId;
+  const hasRsvpFlow = canJoinOnWeb;
+  const flowType = hasRsvpFlow ? "web_registration" : "app_handoff";
+
+  const buildTrackingContext = useCallback(
+    (overrides = {}) =>
+      buildInviteTrackingContext({
+        invite,
+        webSession: overrides.webSession ?? webSession,
+        slug,
+        userId: overrides.userId ?? verifiedUserId,
+      }),
+    [invite, slug, verifiedUserId, webSession],
+  );
+
+  const trackingContext = useMemo(
+    () => buildTrackingContext(),
+    [buildTrackingContext],
+  );
+
+  const trackEvent = useCallback(
+    (eventType, properties = {}, options = {}) =>
+      trackWebJoinEvent(eventType, trackingContext, properties, options),
+    [trackingContext],
+  );
+
+  const funnelDurationSec = useCallback(() => {
+    const startedAt = funnelStartedAtRef.current || Date.now();
+    return Math.max(0, Math.round((Date.now() - startedAt) / 1000));
+  }, []);
+
+  const trackRegistrationCompleted = useCallback(
+    (completedSession, userId) => {
+      const resultKind = resultStatusToResultKind(completedSession?.result_status);
+      return trackWebJoinEvent(
+        "web_registration_completed",
+        buildTrackingContext({
+          webSession: completedSession,
+          userId,
+        }),
+        {
+          rsvp_status: completedSession?.rsvp_status || flowState.rsvpIntent,
+          has_questions: hasQuestions,
+          has_rsvp: hasRsvpFlow,
+          flow_type: flowType,
+          outcome: resultKindToOutcome(resultKind),
+          funnel_duration_sec: funnelDurationSec(),
+        },
+      );
+    },
+    [
+      buildTrackingContext,
+      flowState.rsvpIntent,
+      flowType,
+      funnelDurationSec,
+      hasQuestions,
+      hasRsvpFlow,
+    ],
+  );
+
+  const handleStoreOpen = useCallback(
+    (triggerPage = "detail", options = {}) => {
+      const normalizedTriggerPage =
+        typeof triggerPage === "string" ? triggerPage : "detail";
+      if (!options.skipTracking) {
+        trackEvent(
+          "web_download_tapped",
+          {
+            trigger_page: normalizedTriggerPage,
+            flow_type: flowType,
+            has_rsvp: hasRsvpFlow,
+          },
+          { preferBeacon: true, keepalive: true },
+        );
+      }
+      window.open(getAppStoreUrl(), "_blank", "noopener,noreferrer");
+    },
+    [flowType, hasRsvpFlow, trackEvent],
+  );
+
+  useEffect(() => {
+    if (!invite || loading) return;
+
+    const trackKey = `${trackingContext.session_id}:${trackingContext.event_id}:web_detail_page_viewed`;
+    if (pageViewTrackedKeyRef.current === trackKey) return;
+
+    pageViewTrackedKeyRef.current = trackKey;
+    funnelStartedAtRef.current = Date.now();
+    trackEvent("web_detail_page_viewed", {
+      has_questions: hasQuestions,
+      has_rsvp: hasRsvpFlow,
+      flow_type: flowType,
+      attendee_count: attendeeCount,
+    });
+  }, [
+    attendeeCount,
+    hasQuestions,
+    hasRsvpFlow,
+    flowType,
+    invite,
+    loading,
+    trackEvent,
+    trackingContext.event_id,
+    trackingContext.session_id,
+  ]);
 
   const ensureWebSession = useCallback(async () => {
     if (webSession?.session_id) return webSession;
@@ -145,6 +309,14 @@ export default function InviteFlow({ slug, inviteCode }) {
 
   const handleJoin = useCallback(async () => {
     if (pendingAction) return;
+    setActionError("");
+    if (!funnelStartedAtRef.current) funnelStartedAtRef.current = Date.now();
+    trackEvent("web_join_tapped", {
+      has_questions: hasQuestions,
+      has_rsvp: hasRsvpFlow,
+      flow_type: flowType,
+      attendee_count: attendeeCount,
+    });
 
     if (!isShareMode) {
       handleStoreOpen();
@@ -157,7 +329,7 @@ export default function InviteFlow({ slug, inviteCode }) {
         await ensureWebSession();
         dispatch({ type: "OPEN_RSVP", defaultAnswers });
       } catch (err) {
-        showToast(err.message);
+        showError(err.message);
       } finally {
         setPendingAction(null);
       }
@@ -175,17 +347,23 @@ export default function InviteFlow({ slug, inviteCode }) {
     canJoinOnWeb,
     defaultAnswers,
     handleStoreOpen,
+    hasQuestions,
+    hasRsvpFlow,
+    flowType,
     ensureWebSession,
+    attendeeCount,
     inviteCode,
     isShareMode,
     pendingAction,
-    showToast,
+    showError,
     slug,
+    trackEvent,
   ]);
 
   const handleContinueRsvp = useCallback(async () => {
     if (pendingAction) return;
 
+    setActionError("");
     setPendingAction("rsvp");
     try {
       const session = await ensureWebSession();
@@ -196,13 +374,56 @@ export default function InviteFlow({ slug, inviteCode }) {
         });
         setWebSession(payload.session);
       }
+      trackEvent("web_rsvp_selected", {
+        rsvp_status: flowState.rsvpIntent,
+        has_rsvp: hasRsvpFlow,
+        flow_type: flowType,
+      });
       dispatch({ type: "CONTINUE_FROM_RSVP" });
     } catch (err) {
-      showToast(err.message);
+      showError(err.message);
     } finally {
       setPendingAction(null);
     }
-  }, [ensureWebSession, flowState.rsvpIntent, pendingAction, showToast]);
+  }, [
+    ensureWebSession,
+    flowState.rsvpIntent,
+    flowType,
+    hasRsvpFlow,
+    pendingAction,
+    showError,
+    trackEvent,
+  ]);
+
+  const handleResultAction = useCallback(() => {
+    const triggerPage =
+      flowState.resultKind === "approved" || flowState.resultKind === "direct_join"
+        ? "confirmation"
+        : flowState.resultKind || "confirmation";
+    trackEvent(
+      "web_download_tapped",
+      {
+        trigger_page: triggerPage,
+        flow_type: flowType,
+        has_rsvp: hasRsvpFlow,
+      },
+      { preferBeacon: true, keepalive: true },
+    );
+
+    if (
+      flowState.resultKind === "approved" ||
+      flowState.resultKind === "direct_join"
+    ) {
+      triggerDeepLink({
+        slug,
+        inviteCode,
+        onFallback: () => handleStoreOpen(triggerPage, { skipTracking: true }),
+      });
+      return;
+    }
+
+    handleStoreOpen(triggerPage, { skipTracking: true });
+  }, [flowState.resultKind, flowType, handleStoreOpen, hasRsvpFlow, inviteCode, slug, trackEvent]);
 
   const completeFromBackend = useCallback(async (clerkUserId) => {
     const session = await ensureWebSession();
@@ -223,31 +444,78 @@ export default function InviteFlow({ slug, inviteCode }) {
     return payload.session;
   }, [ensureWebSession, flowState.profile]);
 
-  const handleContinueIdentity = useCallback(async () => {
+  const continueAfterProfile = useCallback(async (clerkUserId) => {
+    const hasQuestions =
+      (flowState.rsvpIntent === "going" || flowState.rsvpIntent === "maybe") &&
+      joinQuestions.length > 0;
+
+    if (hasQuestions) {
+      dispatch({ type: "CONTINUE_TO_QUESTIONS" });
+      return;
+    }
+
+    const completedSession = await completeFromBackend(clerkUserId);
+    trackRegistrationCompleted(completedSession, clerkUserId);
+    dispatch({
+      type: "APPLY_BACKEND_RESULT",
+      resultKind: resultStatusToResultKind(completedSession?.result_status),
+    });
+  }, [
+    completeFromBackend,
+    flowState.rsvpIntent,
+    joinQuestions.length,
+    trackRegistrationCompleted,
+  ]);
+
+  const handleContinuePhone = useCallback(async () => {
     if (pendingAction) return;
 
-    setPendingAction("identity");
+    setActionError("");
+    setPendingAction("phone");
     try {
       setVerifiedClerkUserId(null);
-      await webPhoneAuth.startPhoneVerification({
+      setJoinedAsName("");
+      const phoneAttempt = await webPhoneAuth.startPhoneVerification({
         profile: flowState.profile,
       });
-      dispatch({ type: "CONTINUE_FROM_IDENTITY" });
+      isReturningUserRef.current = phoneAttempt?.mode === "sign_in";
+      smsAttemptCountRef.current = 0;
+      trackEvent("web_phone_submitted", {
+        rsvp_status: flowState.rsvpIntent,
+        country_code: "+1",
+        has_rsvp: hasRsvpFlow,
+        flow_type: flowType,
+      });
+      setResendCooldown(60);
+      dispatch({ type: "CONTINUE_FROM_PHONE" });
     } catch (err) {
-      showToast(err.message);
+      showError(err.message);
     } finally {
       setPendingAction(null);
     }
-  }, [flowState.profile, pendingAction, showToast, webPhoneAuth]);
+  }, [
+    flowState.profile,
+    flowState.rsvpIntent,
+    flowType,
+    hasRsvpFlow,
+    pendingAction,
+    showError,
+    trackEvent,
+    webPhoneAuth,
+  ]);
 
   const handleContinueOtp = useCallback(async () => {
     if (pendingAction) return;
 
+    setActionError("");
     setPendingAction("otp");
+    smsAttemptCountRef.current += 1;
+    let codeVerified = false;
     try {
       const verified = await webPhoneAuth.verifyPhoneCode({
         code: flowState.otpCode,
       });
+      codeVerified = true;
       setVerifiedClerkUserId(verified.clerkUserId);
 
       const session = await ensureWebSession();
@@ -257,13 +525,26 @@ export default function InviteFlow({ slug, inviteCode }) {
       const identityPayload = await fetchWebIdentityStatus({
         sessionId: session.session_id,
         clerkUserId: verified.clerkUserId,
-        displayName: flowState.profile.name,
       });
       setWebSession(identityPayload.session);
+      trackWebJoinEvent(
+        "web_sms_verified",
+        buildTrackingContext({
+          webSession: identityPayload.session || session,
+          userId: verified.clerkUserId,
+        }),
+        {
+          attempt_count: smsAttemptCountRef.current,
+          is_returning_user: isReturningUserRef.current,
+          has_rsvp: hasRsvpFlow,
+          flow_type: flowType,
+        },
+      );
       const identityResultKind = resultStatusToResultKind(
         identityPayload.session?.result_status,
       );
       if (identityResultKind) {
+        trackRegistrationCompleted(identityPayload.session, verified.clerkUserId);
         dispatch({
           type: "APPLY_BACKEND_RESULT",
           resultKind: identityResultKind,
@@ -271,43 +552,100 @@ export default function InviteFlow({ slug, inviteCode }) {
         return;
       }
 
-      const hasQuestions =
-        (flowState.rsvpIntent === "going" || flowState.rsvpIntent === "maybe") &&
-        joinQuestions.length > 0;
-
-      if (hasQuestions) {
+      const firstName = identityPayload.identity?.first_name || "";
+      const needsProfile = identityPayload.identity?.needs_profile ?? !firstName;
+      if (needsProfile) {
         dispatch({
-          type: "CONTINUE_FROM_OTP",
-          hasQuestions: true,
+          type: "CONTINUE_TO_NAME",
+          name: firstName,
         });
         return;
       }
 
-      const completedSession = await completeFromBackend(verified.clerkUserId);
-      dispatch({
-        type: "APPLY_BACKEND_RESULT",
-        resultKind: resultStatusToResultKind(completedSession?.result_status),
-      });
+      if (firstName) {
+        setJoinedAsName(firstName);
+        dispatch({ type: "UPDATE_PROFILE", field: "name", value: firstName });
+      }
+      await continueAfterProfile(verified.clerkUserId);
     } catch (err) {
-      showToast(err.message);
+      if (!codeVerified) {
+        trackEvent("web_sms_failed", {
+          reason: smsFailureReason(err),
+          attempt_count: smsAttemptCountRef.current,
+          has_rsvp: hasRsvpFlow,
+          flow_type: flowType,
+        });
+      }
+      showError(err.message);
     } finally {
       setPendingAction(null);
     }
   }, [
-    completeFromBackend,
+    continueAfterProfile,
     ensureWebSession,
-    flowState.rsvpIntent,
     flowState.otpCode,
+    flowType,
+    buildTrackingContext,
+    hasRsvpFlow,
+    pendingAction,
+    showError,
+    trackEvent,
+    trackRegistrationCompleted,
+    webPhoneAuth,
+  ]);
+
+  const handleContinueName = useCallback(async () => {
+    if (pendingAction) return;
+
+    setActionError("");
+    setPendingAction("name");
+    try {
+      const session = await ensureWebSession();
+      if (!session?.session_id) {
+        throw new Error("Missing web session");
+      }
+      const clerkUserId = verifiedClerkUserId || webPhoneAuth.clerkUserId;
+      if (!clerkUserId) {
+        throw new Error("Missing verified Clerk user");
+      }
+      const identityPayload = await fetchWebIdentityStatus({
+        sessionId: session.session_id,
+        clerkUserId,
+        displayName: flowState.profile.name,
+      });
+      setWebSession(identityPayload.session);
+      const identityResultKind = resultStatusToResultKind(
+        identityPayload.session?.result_status,
+      );
+      if (identityResultKind) {
+        trackRegistrationCompleted(identityPayload.session, clerkUserId);
+        dispatch({
+          type: "APPLY_BACKEND_RESULT",
+          resultKind: identityResultKind,
+        });
+        return;
+      }
+      await continueAfterProfile(clerkUserId);
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      setPendingAction(null);
+    }
+  }, [
+    continueAfterProfile,
+    ensureWebSession,
     flowState.profile.name,
     pendingAction,
-    joinQuestions.length,
-    showToast,
-    webPhoneAuth,
+    showError,
+    trackRegistrationCompleted,
+    verifiedClerkUserId,
+    webPhoneAuth.clerkUserId,
   ]);
 
   const handleSubmitQuestions = useCallback(async () => {
     if (pendingAction) return;
 
+    setActionError("");
     setPendingAction("questions");
     try {
       const session = await ensureWebSession();
@@ -326,24 +664,43 @@ export default function InviteFlow({ slug, inviteCode }) {
         answers: flowState.answers,
       });
       setWebSession(answersPayload.session);
+      trackWebJoinEvent(
+        "web_question_submitted",
+        buildTrackingContext({
+          webSession: answersPayload.session || session,
+          userId: clerkUserId,
+        }),
+        {
+          question_count: joinQuestions.length,
+          rsvp_status: flowState.rsvpIntent,
+          has_rsvp: hasRsvpFlow,
+          flow_type: flowType,
+        },
+      );
       const completed = await completeFromBackend(clerkUserId);
       setWebSession(completed);
+      trackRegistrationCompleted(completed, clerkUserId);
       dispatch({
         type: "APPLY_BACKEND_RESULT",
         resultKind: resultStatusToResultKind(completed?.result_status),
       });
     } catch (err) {
-      showToast(err.message);
+      showError(err.message);
     } finally {
       setPendingAction(null);
     }
   }, [
     ensureWebSession,
     flowState.answers,
+    flowState.rsvpIntent,
+    flowType,
+    hasRsvpFlow,
     joinQuestions,
     pendingAction,
-    showToast,
+    showError,
+    buildTrackingContext,
     completeFromBackend,
+    trackRegistrationCompleted,
     verifiedClerkUserId,
     webPhoneAuth.clerkUserId,
   ]);
@@ -383,7 +740,7 @@ export default function InviteFlow({ slug, inviteCode }) {
   return (
     <div className={styles.wrap}>
       <div className={styles.phoneShell}>
-        <ScreenFrame styles={styles}>
+        <ScreenFrame>
           {flowState.view === FLOW_VIEW.EVENT && (
             <EventScreen
               styles={styles}
@@ -409,11 +766,12 @@ export default function InviteFlow({ slug, inviteCode }) {
               onResetToJoin={() => dispatch({ type: "RESET_TO_JOIN" })}
               isJoining={pendingAction === "join"}
               isSubmittingRsvp={pendingAction === "rsvp"}
+              error={actionError}
             />
           )}
 
-          {flowState.view === FLOW_VIEW.IDENTITY && (
-            <IdentityScreen
+          {flowState.view === FLOW_VIEW.PHONE && (
+            <PhoneScreen
               styles={styles}
               rsvpIntent={flowState.rsvpIntent}
               profile={flowState.profile}
@@ -421,10 +779,24 @@ export default function InviteFlow({ slug, inviteCode }) {
               onUpdateProfile={(field, value) =>
                 dispatch({ type: "UPDATE_PROFILE", field, value })
               }
-              onContinue={handleContinueIdentity}
-              isSubmitting={webPhoneAuth.pending || pendingAction === "identity"}
-              error={webPhoneAuth.error}
+              onContinue={handleContinuePhone}
+              isSubmitting={webPhoneAuth.pending || pendingAction === "phone"}
+              error={webPhoneAuth.error || actionError}
               authReady={webPhoneAuth.isLoaded}
+            />
+          )}
+
+          {flowState.view === FLOW_VIEW.NAME && (
+            <NameScreen
+              styles={styles}
+              profile={flowState.profile}
+              onBack={() => dispatch({ type: "BACK" })}
+              onUpdateProfile={(field, value) =>
+                dispatch({ type: "UPDATE_PROFILE", field, value })
+              }
+              onContinue={handleContinueName}
+              isSubmitting={pendingAction === "name"}
+              error={actionError}
             />
           )}
 
@@ -437,17 +809,25 @@ export default function InviteFlow({ slug, inviteCode }) {
                 dispatch({ type: "UPDATE_OTP", otpCode })
               }
               onContinue={handleContinueOtp}
-              onResend={() =>
-                webPhoneAuth
-                  .resendPhoneCode()
-                  .then(() => {
-                    dispatch({ type: "UPDATE_OTP", otpCode: "" });
-                    showToast("Code resent");
-                  })
-                  .catch((err) => showToast(err.message))
-              }
+              onResend={async () => {
+                if (resendCooldown > 0) return;
+                setActionError("");
+                try {
+                  trackEvent("web_sms_resend_tapped", {
+                    rsvp_status: flowState.rsvpIntent,
+                    has_rsvp: hasRsvpFlow,
+                    flow_type: flowType,
+                  });
+                  await webPhoneAuth.resendPhoneCode();
+                  dispatch({ type: "UPDATE_OTP", otpCode: "" });
+                  setResendCooldown(60);
+                } catch (err) {
+                  showError(err.message);
+                }
+              }}
               isSubmitting={webPhoneAuth.pending || pendingAction === "otp"}
-              error={webPhoneAuth.error}
+              error={webPhoneAuth.error || actionError}
+              resendCooldown={resendCooldown}
             />
           )}
 
@@ -463,6 +843,8 @@ export default function InviteFlow({ slug, inviteCode }) {
               }
               onSubmit={handleSubmitQuestions}
               isSubmitting={pendingAction === "questions"}
+              joinedAsName={joinedAsName}
+              error={actionError}
             />
           )}
 
@@ -471,13 +853,12 @@ export default function InviteFlow({ slug, inviteCode }) {
               styles={styles}
               resultKind={flowState.resultKind}
               hostName={hostName}
-              onContinue={() => dispatch({ type: "COMPLETE_RESULT" })}
+              onContinue={handleResultAction}
+              joinedAsName={joinedAsName}
             />
           )}
         </ScreenFrame>
       </div>
-
-      {toast && <div className={styles.toast}>{toast}</div>}
     </div>
   );
 }

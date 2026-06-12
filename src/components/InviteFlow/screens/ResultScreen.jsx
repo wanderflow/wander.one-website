@@ -44,6 +44,7 @@ export default function ResultScreen({
   resultKind,
   hostName = "The host",
   onContinue,
+  joinedAsName = "",
 }) {
   const content = RESULT_CONTENT[resultKind];
   const body =
@@ -66,6 +67,9 @@ export default function ResultScreen({
         >
           {content.cta}
         </button>
+        {joinedAsName && (
+          <p className={styles.joiningAsText}>Joining as ({joinedAsName})</p>
+        )}
       </div>
     </div>
   );

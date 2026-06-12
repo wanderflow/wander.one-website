@@ -7,7 +7,7 @@
 }
 
 .phoneShell {
-  width: min(100%, 394px);
+  width: 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -62,101 +62,8 @@
   overflow-wrap: anywhere;
 }
 
-.statusBar {
-  padding: 16px 18px 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  font-weight: 700;
-  color: #111111;
-}
-
-.statusTime {
-  font-size: 13px;
-  letter-spacing: 0;
-}
-
-.statusIcons {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.signalIcon {
-  display: flex;
-  align-items: flex-end;
-  gap: 1.5px;
-
-  span {
-    width: 2.5px;
-    border-radius: 999px;
-    background: #111111;
-  }
-
-  span:nth-child(1) { height: 4px; }
-  span:nth-child(2) { height: 6px; }
-  span:nth-child(3) { height: 8px; }
-  span:nth-child(4) { height: 10px; }
-}
-
-.wifiIcon {
-  width: 12px;
-  height: 10px;
-  position: relative;
-  display: inline-flex;
-  align-items: flex-end;
-  justify-content: center;
-
-  span {
-    position: absolute;
-    border: 1.8px solid #111111;
-    border-color: #111111 transparent transparent transparent;
-    border-radius: 50% 50% 0 0;
-  }
-
-  span:nth-child(1) {
-    width: 12px;
-    height: 10px;
-    top: 0;
-  }
-
-  span:nth-child(2) {
-    width: 8px;
-    height: 6px;
-    top: 2px;
-  }
-
-  span:nth-child(3) {
-    width: 3px;
-    height: 3px;
-    top: 6px;
-    border: none;
-    background: #111111;
-    border-radius: 50%;
-  }
-}
-
-.batteryIcon {
-  min-width: 24px;
-  height: 16px;
-  padding: 0 5px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 5px;
-  color: #ffffff;
-  background: #111111;
-  font-size: 10px;
-  line-height: 1;
-}
-
-.batteryLevel {
-  transform: translateY(0.5px);
-}
-
 .header {
-  padding: 2px 15px 18px 16px;
+  padding: max(16px, env(safe-area-inset-top)) 15px 18px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -515,6 +422,48 @@
   animation: spin 0.75s linear infinite;
 }
 
+.floatingJoinBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  padding: 12px 16px max(16px, env(safe-area-inset-bottom));
+  pointer-events: none;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.floatingJoinBarHidden {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+
+.floatingJoinButton {
+  width: 100%;
+  height: 54px;
+  border: none;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #ffffff;
+  background: #040404;
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 700;
+  box-shadow: 0 12px 26px rgba(17, 17, 17, 0.22);
+  pointer-events: auto;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
 .rsvpGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -522,16 +471,23 @@
 }
 
 .rsvpModalBackdrop {
-  position: absolute;
+  position: fixed;
   inset: 0;
+  z-index: 50;
   display: flex;
   align-items: flex-end;
-  background: rgba(0, 0, 0, 0.1);
+  justify-content: center;
+  background: rgba(17, 17, 17, 0.28);
+  overscroll-behavior: contain;
 }
 
 .rsvpModal {
   width: 100%;
+  position: relative;
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
   padding: 8px 14px 24px;
+  overflow-y: auto;
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   background: rgba(255, 255, 255, 0.98);
@@ -540,9 +496,14 @@
 
 .rsvpModalHandleButton {
   width: 100%;
+  position: relative;
   padding: 0 0 10px;
   border: none;
   background: transparent;
+
+  &:disabled {
+    opacity: 0.45;
+  }
 }
 
 .rsvpModalHandle {
@@ -684,16 +645,21 @@
 }
 
 .flowTopBar {
-  min-height: 24px;
-  padding: 0 10px;
+  min-height: 44px;
+  padding: 0 6px;
 }
 
 .backButton {
+  width: 44px;
+  height: 44px;
   border: none;
   padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   color: #2b2438;
-  font-size: 28px;
+  font-size: 34px;
   line-height: 1;
 
   &:disabled {
@@ -727,6 +693,15 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.joiningAsText {
+  margin: 2px 0 0;
+  text-align: center;
+  color: rgba(43, 36, 56, 0.36);
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 500;
 }
 
 .flowTitle {
@@ -894,7 +869,10 @@
 }
 
 .flowError {
-  margin: 0;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  text-align: center;
   font-size: 12px;
   line-height: 1.45;
   font-weight: 600;
@@ -955,6 +933,7 @@
 
   &:disabled {
     opacity: 0.45;
+    cursor: not-allowed;
   }
 }
 
@@ -1050,27 +1029,6 @@
   font-weight: 700;
 }
 
-.homeIndicator {
-  width: 135px;
-  height: 5px;
-  margin: 0 auto 9px;
-  border-radius: 999px;
-  background: #0f0f0f;
-}
-
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: 26px;
-  transform: translateX(-50%);
-  padding: 10px 18px;
-  border-radius: 999px;
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 600;
-  background: rgba(17, 17, 17, 0.88);
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -1087,6 +1045,32 @@
     min-height: calc(100vh - 16px);
     border: 1px solid rgba(17, 17, 17, 0.08);
     box-shadow: 0 12px 34px rgba(17, 17, 17, 0.12);
+  }
+}
+
+@media (min-width: 720px) {
+  .rsvpModalBackdrop {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .rsvpModal {
+    width: min(420px, 100%);
+    padding: 28px 24px 24px;
+    border-radius: 28px;
+    box-shadow: 0 24px 70px rgba(17, 17, 17, 0.24);
+  }
+
+  .rsvpModalHandleButton {
+    display: none;
+  }
+
+  .rsvpModalHandle {
+    display: none;
+  }
+
+  .rsvpModalTitle {
+    margin-top: 2px;
   }
 }
 

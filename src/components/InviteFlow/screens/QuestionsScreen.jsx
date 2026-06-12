@@ -7,6 +7,8 @@ export default function QuestionsScreen({
   onUpdateAnswer,
   onSubmit,
   isSubmitting = false,
+  joinedAsName = "",
+  error = "",
 }) {
   return (
     <>
@@ -81,6 +83,10 @@ export default function QuestionsScreen({
             {isSubmitting && <span className={styles.buttonSpinner} aria-hidden="true" />}
             <span>{isSubmitting ? "Submitting..." : "Submit"}</span>
           </button>
+          {joinedAsName && (
+            <p className={styles.joiningAsText}>Joining as ({joinedAsName})</p>
+          )}
+          {error && <p className={styles.flowError}>{error}</p>}
         </div>
       </div>
     </>

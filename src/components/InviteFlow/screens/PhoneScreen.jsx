@@ -1,6 +1,6 @@
 import { formatPhoneNumber, normalizePhoneDigits } from "../utils";
 
-export default function IdentityScreen({
+export default function PhoneScreen({
   styles,
   rsvpIntent,
   profile,
@@ -11,11 +11,11 @@ export default function IdentityScreen({
   error = "",
   authReady = true,
 }) {
-  const isJoinRequest = rsvpIntent === "going" || rsvpIntent === "maybe";
-  const title = isJoinRequest ? "Who are you?" : "That's okay";
-  const subtitle = isJoinRequest
-    ? "The host will see your info"
-    : "We'll still keep you in the loop closer to the date.";
+  const isCantGo = rsvpIntent === "cant_go";
+  const title = isCantGo ? "Can't make it this time?" : "What's your number?";
+  const subtitle = isCantGo
+    ? "Leave your number and we'll let you know about similar hangouts"
+    : "We'll text you updates about this event.";
 
   return (
     <>
@@ -33,17 +33,6 @@ export default function IdentityScreen({
         <div className={styles.formFields}>
           <h1 className={styles.flowTitle}>{title}</h1>
           <p className={styles.flowSubtitle}>{subtitle}</p>
-
-          <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>Your Name</label>
-            <input
-              value={profile.name}
-              onChange={(event) => onUpdateProfile("name", event.target.value)}
-              className={styles.textInput}
-              placeholder="Enter your name"
-              disabled={isSubmitting}
-            />
-          </div>
 
           <div className={styles.fieldGroup}>
             <label className={styles.fieldLabel}>Phone Number</label>
@@ -77,7 +66,7 @@ export default function IdentityScreen({
                   )
                 }
                 className={styles.phoneInput}
-                placeholder="(123) 456-7890"
+                placeholder="123-123-123"
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel"
@@ -97,12 +86,7 @@ export default function IdentityScreen({
             type="button"
             onClick={onContinue}
             className={styles.primaryButton}
-            disabled={
-              isSubmitting ||
-              !authReady ||
-              !profile.name.trim() ||
-              profile.phoneDigits.length < 10
-            }
+            disabled={isSubmitting || !authReady || profile.phoneDigits.length < 10}
           >
             {isSubmitting && <span className={styles.buttonSpinner} aria-hidden="true" />}
             <span>{isSubmitting ? "Sending..." : "Next"}</span>
