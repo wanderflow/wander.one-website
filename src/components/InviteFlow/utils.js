@@ -95,17 +95,72 @@ function execCopyFallback(text) {
   document.body.removeChild(textarea);
 }
 
+export function detectInAppBrowser() {
+  if (typeof navigator === "undefined") {
+    return {
+      isInAppBrowser: false,
+      appName: "",
+      recommendedBrowser: "Safari or Chrome",
+      instruction: "Use the menu to open this page in your browser.",
+    };
+  }
+
+  const ua = navigator.userAgent || "";
+  const platform = navigator.platform || "";
+  const isAndroid = /Android/i.test(ua);
+  const isIos =
+    /iPhone|iPad|iPod/i.test(ua) ||
+    (platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  const appMatchers = [
+    { name: "Instagram", pattern: /Instagram/i },
+    { name: "WeChat", pattern: /MicroMessenger|WeChat/i },
+    { name: "Messenger", pattern: /Messenger/i },
+    { name: "Facebook", pattern: /FBAN|FBAV|FB_IAB|FB4A|FBIOS/i },
+    { name: "TikTok", pattern: /TikTok|Bytedance|musical_ly|Aweme/i },
+    { name: "Snapchat", pattern: /Snapchat/i },
+    { name: "LINE", pattern: /Line\//i },
+    { name: "QQ", pattern: /\bQQ\//i },
+    { name: "Weibo", pattern: /Weibo/i },
+    { name: "Telegram", pattern: /Telegram/i },
+  ];
+  const matchedApp = appMatchers.find((app) => app.pattern.test(ua));
+  const recommendedBrowser = isIos ? "Safari or Chrome" : isAndroid ? "Chrome" : "Safari or Chrome";
+  const appName = matchedApp?.name || "";
+
+  return {
+    isInAppBrowser: Boolean(matchedApp),
+    appName,
+    recommendedBrowser,
+    instruction: "Use the menu to open this page in your browser.",
+  };
+}
+
 export function triggerDeepLink({ slug, inviteCode, onFallback, onOpened }) {
   const ua = navigator.userAgent || "";
+  const platform = navigator.platform || "";
   const isAndroid = /Android/i.test(ua);
+  const isIos =
+    /iPhone|iPad|iPod/i.test(ua) ||
+    (platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  const encodedSlug = encodeURIComponent(slug);
+  const encodedInviteCode = encodeURIComponent(inviteCode || "");
 
   if (isAndroid) {
-    window.location.href = `intent://share/${slug}?invite_code=${inviteCode}#Intent;scheme=wanderone;package=com.wander.one.app;end`;
-    onOpened?.();
+    const fallbackUrl = encodeURIComponent(
+      "https://play.google.com/store/apps/details?id=com.wander.one.app",
+    );
+    window.location.href = `intent://share/${encodedSlug}?invite_code=${encodedInviteCode}#Intent;scheme=wanderone;package=com.wander.one.app;S.browser_fallback_url=${fallbackUrl};end`;
     return;
   }
 
-  const schemeUrl = `wanderone://share/${slug}?invite_code=${inviteCode}`;
+  if (!isIos) {
+    onFallback?.();
+    return;
+  }
+
+  const schemeUrl = `wanderone://share/${encodedSlug}?invite_code=${encodedInviteCode}`;
   const iframe = document.createElement("iframe");
   iframe.style.display = "none";
   iframe.src = schemeUrl;

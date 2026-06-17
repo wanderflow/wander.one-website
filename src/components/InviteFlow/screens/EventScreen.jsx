@@ -228,6 +228,7 @@ export default function EventScreen({
   onJoin,
   onStoreOpen,
   onResetToJoin,
+  browserNotice = null,
   isJoining = false,
   isSubmittingRsvp = false,
   error = "",
@@ -293,6 +294,8 @@ export default function EventScreen({
             </button>
           </div>
         </header>
+
+        {browserNotice}
 
         <div className={styles.mainContent}>
           <h1 className={styles.pageTitle}>{eventTitle}</h1>
