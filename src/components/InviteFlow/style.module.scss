@@ -1030,9 +1030,18 @@
   font-weight: 700;
 }
 
+.browserNoticeSpacer {
+  height: 84px;
+  flex: 0 0 auto;
+}
+
 .browserNotice {
   width: 100%;
-  margin-bottom: 18px;
+  position: fixed;
+  top: 72px;
+  left: 0;
+  right: 0;
+  z-index: 80;
   padding: 14px 22px;
   display: flex;
   align-items: center;
@@ -1142,6 +1151,10 @@
     gap: 12px;
     padding-right: 16px;
     padding-left: 16px;
+  }
+
+  .browserNoticeSpacer {
+    height: 78px;
   }
 
   .browserNoticeIcon {

@@ -62,15 +62,18 @@ function InAppBrowserNotice({ styles, browserInfo }) {
   if (!browserInfo?.isInAppBrowser) return null;
 
   return (
-    <div className={styles.browserNotice} role="note" aria-label="Open in browser">
-      <span className={styles.browserNoticeIcon} aria-hidden="true">
-        🌐
-      </span>
-      <div className={styles.browserNoticeCopy}>
-        <p className={styles.browserNoticeTitle}>Tap ... → Open in browser</p>
-        <p className={styles.browserNoticeText}>Open in browser first to join</p>
+    <>
+      <div className={styles.browserNoticeSpacer} aria-hidden="true" />
+      <div className={styles.browserNotice} role="note" aria-label="Open in browser">
+        <span className={styles.browserNoticeIcon} aria-hidden="true">
+          🌐
+        </span>
+        <div className={styles.browserNoticeCopy}>
+          <p className={styles.browserNoticeTitle}>Tap ... → Open in browser</p>
+          <p className={styles.browserNoticeText}>Open in browser first to join</p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -86,6 +89,7 @@ export default function InviteFlow({ slug, inviteCode }) {
   const [joinedAsName, setJoinedAsName] = useState("");
   const [pendingAction, setPendingAction] = useState(null);
   const [browserInfo, setBrowserInfo] = useState(null);
+  const [storeUrl, setStoreUrl] = useState("");
   const [showBrowserNotice, setShowBrowserNotice] = useState(false);
   const [flowState, dispatch] = useReducer(inviteFlowReducer, undefined, createFlowState);
   const pageViewTrackedKeyRef = useRef("");
@@ -101,6 +105,7 @@ export default function InviteFlow({ slug, inviteCode }) {
   useEffect(() => {
     const detectedBrowser = detectInAppBrowser();
     setBrowserInfo(detectedBrowser);
+    setStoreUrl(getAppStoreUrl());
     setShowBrowserNotice(detectedBrowser.isInAppBrowser);
   }, []);
 
@@ -282,10 +287,10 @@ export default function InviteFlow({ slug, inviteCode }) {
     (triggerPage = "detail", options = {}) => {
       const normalizedTriggerPage =
         typeof triggerPage === "string" ? triggerPage : "detail";
-      if (browserInfo?.isInAppBrowser && !options.allowInAppBrowser) {
+      if (browserInfo?.isInAppBrowser) {
         setShowBrowserNotice(true);
         trackEvent(
-          "web_in_app_browser_blocked",
+          "web_in_app_browser_store_attempt",
           {
             trigger_page: normalizedTriggerPage,
             flow_type: flowType,
@@ -294,7 +299,6 @@ export default function InviteFlow({ slug, inviteCode }) {
           },
           { preferBeacon: true, keepalive: true },
         );
-        return;
       }
       if (!options.skipTracking) {
         trackEvent(
@@ -307,14 +311,9 @@ export default function InviteFlow({ slug, inviteCode }) {
           { preferBeacon: true, keepalive: true },
         );
       }
-      const storeUrl = getAppStoreUrl();
-      if (options.sameTab) {
-        window.location.assign(storeUrl);
-        return;
-      }
-      window.open(storeUrl, "_blank", "noopener,noreferrer");
+      window.location.assign(storeUrl || getAppStoreUrl());
     },
-    [browserInfo, flowType, hasRsvpFlow, trackEvent],
+    [browserInfo, flowType, hasRsvpFlow, storeUrl, trackEvent],
   );
 
   useEffect(() => {
@@ -382,6 +381,7 @@ export default function InviteFlow({ slug, inviteCode }) {
 
     if (browserInfo?.isInAppBrowser) {
       setShowBrowserNotice(true);
+      handleStoreOpen("detail", { allowInAppBrowser: true });
       return;
     }
 
@@ -476,6 +476,10 @@ export default function InviteFlow({ slug, inviteCode }) {
           },
           { preferBeacon: true, keepalive: true },
         );
+        handleStoreOpen(triggerPage, {
+          allowInAppBrowser: true,
+          skipTracking: true,
+        });
         return;
       }
 
