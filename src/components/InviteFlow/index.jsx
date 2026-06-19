@@ -14,6 +14,7 @@ import {
 import { GRADIENT_CSS, OTP_LENGTH } from "./constants";
 import {
   buildMapSearchUrl,
+  detectInAppBrowser,
   formatDetailDate,
   splitLocation,
   triggerDeepLink,
@@ -57,6 +58,25 @@ function resultKindToOutcome(resultKind) {
   return "confirmed";
 }
 
+function InAppBrowserNotice({ styles, browserInfo }) {
+  if (!browserInfo?.isInAppBrowser) return null;
+
+  return (
+    <>
+      <div className={styles.browserNoticeSpacer} aria-hidden="true" />
+      <div className={styles.browserNotice} role="note" aria-label="Open in browser">
+        <span className={styles.browserNoticeIcon} aria-hidden="true">
+          🌐
+        </span>
+        <div className={styles.browserNoticeCopy}>
+          <p className={styles.browserNoticeTitle}>Tap ... → Open in browser</p>
+          <p className={styles.browserNoticeText}>Open in browser first to join</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function InviteFlow({ slug, inviteCode }) {
   const [invite, setInvite] = useState(null);
   const [webSession, setWebSession] = useState(null);
@@ -68,6 +88,9 @@ export default function InviteFlow({ slug, inviteCode }) {
   const [verifiedClerkUserId, setVerifiedClerkUserId] = useState(null);
   const [joinedAsName, setJoinedAsName] = useState("");
   const [pendingAction, setPendingAction] = useState(null);
+  const [browserInfo, setBrowserInfo] = useState(null);
+  const [storeUrl, setStoreUrl] = useState("");
+  const [showBrowserNotice, setShowBrowserNotice] = useState(false);
   const [flowState, dispatch] = useReducer(inviteFlowReducer, undefined, createFlowState);
   const pageViewTrackedKeyRef = useRef("");
   const funnelStartedAtRef = useRef(null);
@@ -78,6 +101,13 @@ export default function InviteFlow({ slug, inviteCode }) {
   const isShareMode = Boolean(slug);
   const isRsvpModalOpen = flowState.view === FLOW_VIEW.EVENT &&
     flowState.eventCard === EVENT_CARD.RSVP;
+
+  useEffect(() => {
+    const detectedBrowser = detectInAppBrowser();
+    setBrowserInfo(detectedBrowser);
+    setStoreUrl(getAppStoreUrl());
+    setShowBrowserNotice(detectedBrowser.isInAppBrowser);
+  }, []);
 
   const showError = useCallback((message) => {
     setActionError(message || "Something went wrong. Please try again.");
@@ -257,6 +287,19 @@ export default function InviteFlow({ slug, inviteCode }) {
     (triggerPage = "detail", options = {}) => {
       const normalizedTriggerPage =
         typeof triggerPage === "string" ? triggerPage : "detail";
+      if (browserInfo?.isInAppBrowser) {
+        setShowBrowserNotice(true);
+        trackEvent(
+          "web_in_app_browser_store_attempt",
+          {
+            trigger_page: normalizedTriggerPage,
+            flow_type: flowType,
+            has_rsvp: hasRsvpFlow,
+            browser_app: browserInfo.appName,
+          },
+          { preferBeacon: true, keepalive: true },
+        );
+      }
       if (!options.skipTracking) {
         trackEvent(
           "web_download_tapped",
@@ -268,9 +311,9 @@ export default function InviteFlow({ slug, inviteCode }) {
           { preferBeacon: true, keepalive: true },
         );
       }
-      window.open(getAppStoreUrl(), "_blank", "noopener,noreferrer");
+      window.location.assign(storeUrl || getAppStoreUrl());
     },
-    [flowType, hasRsvpFlow, trackEvent],
+    [browserInfo, flowType, hasRsvpFlow, storeUrl, trackEvent],
   );
 
   useEffect(() => {
@@ -336,11 +379,17 @@ export default function InviteFlow({ slug, inviteCode }) {
       return;
     }
 
+    if (browserInfo?.isInAppBrowser) {
+      setShowBrowserNotice(true);
+      handleStoreOpen("detail", { allowInAppBrowser: true });
+      return;
+    }
+
     triggerDeepLink({
       slug,
       inviteCode,
       onFallback: () => {
-        handleStoreOpen();
+        handleStoreOpen("detail", { sameTab: true });
       },
     });
   }, [
@@ -352,6 +401,7 @@ export default function InviteFlow({ slug, inviteCode }) {
     flowType,
     ensureWebSession,
     attendeeCount,
+    browserInfo,
     inviteCode,
     isShareMode,
     pendingAction,
@@ -414,16 +464,36 @@ export default function InviteFlow({ slug, inviteCode }) {
       flowState.resultKind === "approved" ||
       flowState.resultKind === "direct_join"
     ) {
+      if (browserInfo?.isInAppBrowser) {
+        setShowBrowserNotice(true);
+        trackEvent(
+          "web_in_app_browser_blocked",
+          {
+            trigger_page: triggerPage,
+            flow_type: flowType,
+            has_rsvp: hasRsvpFlow,
+            browser_app: browserInfo.appName,
+          },
+          { preferBeacon: true, keepalive: true },
+        );
+        handleStoreOpen(triggerPage, {
+          allowInAppBrowser: true,
+          skipTracking: true,
+        });
+        return;
+      }
+
       triggerDeepLink({
         slug,
         inviteCode,
-        onFallback: () => handleStoreOpen(triggerPage, { skipTracking: true }),
+        onFallback: () =>
+          handleStoreOpen(triggerPage, { skipTracking: true, sameTab: true }),
       });
       return;
     }
 
     handleStoreOpen(triggerPage, { skipTracking: true });
-  }, [flowState.resultKind, flowType, handleStoreOpen, hasRsvpFlow, inviteCode, slug, trackEvent]);
+  }, [browserInfo, flowState.resultKind, flowType, handleStoreOpen, hasRsvpFlow, inviteCode, slug, trackEvent]);
 
   const completeFromBackend = useCallback(async (clerkUserId) => {
     const session = await ensureWebSession();
@@ -705,6 +775,13 @@ export default function InviteFlow({ slug, inviteCode }) {
     webPhoneAuth.clerkUserId,
   ]);
 
+  const browserNotice = showBrowserNotice ? (
+    <InAppBrowserNotice
+      styles={styles}
+      browserInfo={browserInfo}
+    />
+  ) : null;
+
   if (loading) {
     return (
       <div className={styles.wrap}>
@@ -764,6 +841,7 @@ export default function InviteFlow({ slug, inviteCode }) {
               onJoin={handleJoin}
               onStoreOpen={handleStoreOpen}
               onResetToJoin={() => dispatch({ type: "RESET_TO_JOIN" })}
+              browserNotice={browserNotice}
               isJoining={pendingAction === "join"}
               isSubmittingRsvp={pendingAction === "rsvp"}
               error={actionError}
