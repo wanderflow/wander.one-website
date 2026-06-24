@@ -167,8 +167,6 @@ export function triggerDeepLink({ slug, inviteCode, onFallback, onOpened }) {
   document.body.appendChild(iframe);
   setTimeout(() => iframe.remove(), 500);
 
-  window.location.href = schemeUrl;
-
   const timer = setTimeout(() => {
     if (!document.hidden) {
       onFallback?.();
