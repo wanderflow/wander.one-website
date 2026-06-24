@@ -6,19 +6,44 @@ async function ensureOk(response) {
 
 export function normalizeInviteDetail(payload) {
   const detail = payload?.detail ?? payload ?? {};
-  const questions = Array.isArray(detail.preference_question)
-    ? detail.preference_question
+  const displayDetail =
+    detail?.target_type === "room" && detail?.room && typeof detail.room === "object"
+      ? detail.room
+      : detail;
+  const questions = Array.isArray(displayDetail.preference_question)
+    ? displayDetail.preference_question
     : [];
+  const members =
+    displayDetail.members ||
+    displayDetail.room_members ||
+    displayDetail.group_members ||
+    [];
 
   return {
-    subject: detail.subject || detail.group_subject || "Wander event",
-    photo: detail.photo || detail.group_photo || "",
-    time: detail.time || detail.group_time || null,
-    location: detail.location || detail.group_location || "",
-    description: detail.description || detail.group_content || "",
-    creator_user_id: detail.creator_user_id || "",
-    member_count: detail.member_count ?? detail.members?.length ?? 0,
-    members: detail.members || detail.group_members || [],
+    subject:
+      displayDetail.subject ||
+      displayDetail.room_subject ||
+      displayDetail.group_subject ||
+      "Wander event",
+    photo:
+      displayDetail.photo ||
+      displayDetail.room_photo ||
+      displayDetail.group_photo ||
+      "",
+    time: displayDetail.time || displayDetail.room_time || displayDetail.group_time || null,
+    location:
+      displayDetail.location ||
+      displayDetail.room_location ||
+      displayDetail.group_location ||
+      "",
+    description:
+      displayDetail.description ||
+      displayDetail.room_content ||
+      displayDetail.group_content ||
+      "",
+    creator_user_id: displayDetail.creator_user_id || "",
+    member_count: displayDetail.member_count ?? members.length,
+    members,
     join_questions: questions.map((question, index) => {
       const options = question.predefined_options || question.options || [];
       const questionText = question.question || question.label || "";
