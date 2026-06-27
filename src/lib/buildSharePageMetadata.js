@@ -31,6 +31,21 @@ function absolutePhotoUrl(photo) {
   return `${DEFAULT_SITE}${photo.startsWith("/") ? "" : "/"}${photo}`;
 }
 
+function resolveShareDisplayDetail(data) {
+  if (data?.target_type === "room" && data?.room && typeof data.room === "object") {
+    return data.room;
+  }
+  return data || {};
+}
+
+function displaySubject(detail) {
+  return detail.subject || detail.room_subject || detail.group_subject;
+}
+
+function displayPhoto(detail) {
+  return detail.photo || detail.room_photo || detail.group_photo;
+}
+
 /**
  * 按 https://ogp.me/ 为单张 og:image 提供结构化字段（url / secure_url / type / width / height / alt）。
  * 远程群图未知尺寸时不填 width、height，避免与规范不符的虚假数值。
@@ -83,13 +98,14 @@ export async function buildSharePageMetadata({
   const canonicalObjectUrl = `${DEFAULT_SITE}${canonicalPath}`;
 
   const data = await fetchInviteDetailForMeta({ invite_link: inviteLink });
+  const displayDetail = resolveShareDisplayDetail(data);
 
-  const ogTitle = buildShareOgTitle(data?.subject);
+  const ogTitle = buildShareOgTitle(displaySubject(displayDetail));
   const description =
     bucket === "social"
       ? socialShareDescription()
       : MESSAGING_SHARE_DESCRIPTION;
-  const groupImageUrl = absolutePhotoUrl(data?.photo);
+  const groupImageUrl = absolutePhotoUrl(displayPhoto(displayDetail));
   const staticCoverUrl = `${DEFAULT_SITE}${OG_COVER_FALLBACK_PATH}`;
   const coverImageUrl = groupImageUrl || staticCoverUrl;
 
