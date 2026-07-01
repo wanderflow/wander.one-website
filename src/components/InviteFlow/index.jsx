@@ -16,6 +16,7 @@ import {
   buildMapSearchUrl,
   detectInAppBrowser,
   formatDetailDate,
+  getPhoneCountry,
   splitLocation,
   triggerDeepLink,
 } from "./utils";
@@ -552,7 +553,7 @@ export default function InviteFlow({ slug, inviteCode }) {
       smsAttemptCountRef.current = 0;
       trackEvent("web_phone_submitted", {
         rsvp_status: flowState.rsvpIntent,
-        country_code: "+1",
+        country_code: getPhoneCountry(flowState.profile.country).code,
         has_rsvp: hasRsvpFlow,
         flow_type: flowType,
       });
