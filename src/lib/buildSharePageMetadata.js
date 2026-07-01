@@ -46,6 +46,12 @@ function displayPhoto(detail) {
   return detail.photo || detail.room_photo || detail.group_photo;
 }
 
+function appendInviteCodeToTitle(title, inviteCode) {
+  const code = String(inviteCode || "").trim();
+  if (!code) return title;
+  return `${title} [${code}]`;
+}
+
 /**
  * 按 https://ogp.me/ 为单张 og:image 提供结构化字段（url / secure_url / type / width / height / alt）。
  * 远程群图未知尺寸时不填 width、height，避免与规范不符的虚假数值。
@@ -100,7 +106,10 @@ export async function buildSharePageMetadata({
   const data = await fetchInviteDetailForMeta({ invite_link: inviteLink });
   const displayDetail = resolveShareDisplayDetail(data);
 
-  const ogTitle = buildShareOgTitle(displaySubject(displayDetail));
+  const ogTitle = appendInviteCodeToTitle(
+    buildShareOgTitle(displaySubject(displayDetail)),
+    inviteCode,
+  );
   const description =
     bucket === "social"
       ? socialShareDescription()

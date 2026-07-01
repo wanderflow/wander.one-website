@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useClerk, useSignIn, useSignUp, useUser } from "@clerk/nextjs";
+import { toE164PhoneNumber } from "./utils";
 
 function clerkErrorMessage(error) {
   const firstError = error?.errors?.[0];
@@ -67,9 +68,7 @@ function getPhoneCodeFactor(signInAttempt) {
 }
 
 export function toE164Phone(profile) {
-  const digits = String(profile?.phoneDigits || "").replace(/\D/g, "").slice(0, 10);
-  if (digits.length !== 10) return "";
-  return `+1${digits}`;
+  return toE164PhoneNumber(profile?.phoneDigits || "", profile?.country);
 }
 
 async function waitForActiveUserId(clerk, fallbackUserId) {
@@ -112,7 +111,7 @@ export function useWebPhoneAuth() {
 
       const fullPhoneNumber = toE164Phone(profile);
       if (!fullPhoneNumber) {
-        throw new Error("Enter a valid US or Canada phone number");
+        throw new Error("Enter a valid phone number for the selected country or region");
       }
 
       setPending(true);

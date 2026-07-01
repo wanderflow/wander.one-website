@@ -1,4 +1,10 @@
-import { formatPhoneNumber, normalizePhoneDigits } from "../utils";
+import {
+  PHONE_COUNTRIES,
+  formatPhoneNumber,
+  getPhoneCountry,
+  isPhoneNumberComplete,
+  normalizePhoneDigits,
+} from "../utils";
 
 export default function PhoneScreen({
   styles,
@@ -16,6 +22,19 @@ export default function PhoneScreen({
   const subtitle = isCantGo
     ? "Leave your number and we'll let you know about similar hangouts"
     : "We'll text you updates about this event.";
+  const selectedCountry = getPhoneCountry(profile.country);
+  const canContinue = isPhoneNumberComplete(
+    profile.phoneDigits,
+    selectedCountry.id,
+  );
+
+  const handleCountryChange = (countryId) => {
+    onUpdateProfile("country", countryId);
+    onUpdateProfile(
+      "phoneDigits",
+      normalizePhoneDigits(profile.phoneDigits, countryId),
+    );
+  };
 
   return (
     <>
@@ -40,33 +59,44 @@ export default function PhoneScreen({
               <div className={styles.countrySelectWrap}>
                 <div className={styles.countryDisplay} aria-hidden="true">
                   <span className={styles.countryFlag}>
-                    {profile.country === "us" ? "🇺🇸" : "🇨🇦"}
+                    {selectedCountry.flag}
                   </span>
-                  <span className={styles.countryCode}>+1</span>
+                  <span className={styles.countryCode}>
+                    {selectedCountry.code}
+                  </span>
                 </div>
                 <select
                   value={profile.country}
                   onChange={(event) =>
-                    onUpdateProfile("country", event.target.value)
+                    handleCountryChange(event.target.value)
                   }
                   className={styles.countrySelect}
                   disabled={isSubmitting}
                 >
-                  <option value="ca">Canada +1</option>
-                  <option value="us">United States +1</option>
+                  {PHONE_COUNTRIES.map((country) => (
+                    <option key={country.id} value={country.id}>
+                      {country.name} {country.code}
+                    </option>
+                  ))}
                 </select>
                 <span className={styles.countryCaret}>▾</span>
               </div>
               <input
-                value={formatPhoneNumber(profile.phoneDigits)}
+                value={formatPhoneNumber(
+                  profile.phoneDigits,
+                  selectedCountry.id,
+                )}
                 onChange={(event) =>
                   onUpdateProfile(
                     "phoneDigits",
-                    normalizePhoneDigits(event.target.value),
+                    normalizePhoneDigits(
+                      event.target.value,
+                      selectedCountry.id,
+                    ),
                   )
                 }
                 className={styles.phoneInput}
-                placeholder="123-123-123"
+                placeholder={selectedCountry.example}
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel"
@@ -86,7 +116,7 @@ export default function PhoneScreen({
             type="button"
             onClick={onContinue}
             className={styles.primaryButton}
-            disabled={isSubmitting || !authReady || profile.phoneDigits.length < 10}
+            disabled={isSubmitting || !authReady || !canContinue}
           >
             {isSubmitting && <span className={styles.buttonSpinner} aria-hidden="true" />}
             <span>{isSubmitting ? "Sending..." : "Next"}</span>

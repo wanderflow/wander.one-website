@@ -16,6 +16,7 @@ import {
   buildMapSearchUrl,
   detectInAppBrowser,
   formatDetailDate,
+  getPhoneCountry,
   splitLocation,
   triggerDeepLink,
 } from "./utils";
@@ -56,6 +57,12 @@ function resultKindToOutcome(resultKind) {
   if (resultKind === "cant_go") return "cant_go";
   if (resultKind === "rejected") return "rejected";
   return "confirmed";
+}
+
+function appendInviteCodeToTitle(title, inviteCode) {
+  const code = String(inviteCode || "").trim();
+  if (!code) return title;
+  return `${title} [${code}]`;
 }
 
 function InAppBrowserNotice({ styles, browserInfo }) {
@@ -221,7 +228,10 @@ export default function InviteFlow({ slug, inviteCode }) {
   const hostName = creator?.first_name || "the host";
   const displayMembers = invite?.members?.slice(0, 4) ?? [];
   const attendeeCount = invite?.member_count ?? invite?.members?.length ?? 0;
-  const eventTitle = invite?.subject || "Wander event";
+  const eventTitle = appendInviteCodeToTitle(
+    invite?.subject || "Wander event",
+    inviteCode,
+  );
   const hasQuestions = joinQuestions.length > 0;
   const verifiedUserId = verifiedClerkUserId || webPhoneAuth.clerkUserId;
   const hasRsvpFlow = canJoinOnWeb;
@@ -552,7 +562,7 @@ export default function InviteFlow({ slug, inviteCode }) {
       smsAttemptCountRef.current = 0;
       trackEvent("web_phone_submitted", {
         rsvp_status: flowState.rsvpIntent,
-        country_code: "+1",
+        country_code: getPhoneCountry(flowState.profile.country).code,
         has_rsvp: hasRsvpFlow,
         flow_type: flowType,
       });
