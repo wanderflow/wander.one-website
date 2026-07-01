@@ -1,7 +1,16 @@
 async function ensureOk(response) {
   if (response.ok) return response;
   const text = await response.text();
-  throw new Error(text || `Request failed with ${response.status}`);
+  let message = text;
+
+  try {
+    const payload = JSON.parse(text);
+    message = payload?.detail || payload?.message || text;
+  } catch {
+    message = text;
+  }
+
+  throw new Error(message || `Request failed with ${response.status}`);
 }
 
 export function normalizeInviteDetail(payload) {
