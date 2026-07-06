@@ -219,6 +219,8 @@ export default function EventScreen({
   mapUrl,
   creator,
   hostName,
+  inviteCode,
+  description,
   attendeeCount,
   displayMembers,
   eventCard,
@@ -237,6 +239,16 @@ export default function EventScreen({
   const showFloatingJoin = eventCard === "join" && !isRsvpModalOpen;
   const joinCardRef = useRef(null);
   const [isJoinCardVisible, setIsJoinCardVisible] = useState(false);
+  const cleanInviteCode = String(inviteCode || "").trim();
+
+  const handleCopyInviteCode = async () => {
+    if (!cleanInviteCode || !navigator?.clipboard?.writeText) return;
+    try {
+      await navigator.clipboard.writeText(cleanInviteCode);
+    } catch {
+      // Clipboard is best-effort on the public share page.
+    }
+  };
 
   useEffect(() => {
     if (!showFloatingJoin || !joinCardRef.current) {
@@ -388,9 +400,28 @@ export default function EventScreen({
             )}
           </section>
 
-          {data.description && (
+          {cleanInviteCode && (
+            <section className={styles.inviteCodeCard}>
+              <p className={styles.inviteCodeHint}>
+                Download and enter the code to join!
+              </p>
+              <div className={styles.inviteCodeRow}>
+                <span className={styles.inviteCodeValue}>{cleanInviteCode}</span>
+                <button
+                  type="button"
+                  className={styles.inviteCodeCopyButton}
+                  onClick={handleCopyInviteCode}
+                  aria-label="Copy invite code"
+                >
+                  <span className={styles.copyIcon} aria-hidden="true" />
+                </button>
+              </div>
+            </section>
+          )}
+
+          {description && (
             <section className={styles.descriptionSection}>
-              <p className={styles.descriptionText}>{data.description}</p>
+              <p className={styles.descriptionText}>{description}</p>
             </section>
           )}
 

@@ -59,10 +59,20 @@ function resultKindToOutcome(resultKind) {
   return "confirmed";
 }
 
-function appendInviteCodeToTitle(title, inviteCode) {
+function stripInviteCodeFromText(text, inviteCode) {
+  const rawText = String(text || "");
   const code = String(inviteCode || "").trim();
-  if (!code) return title;
-  return `${title} [${code}]`;
+  if (!code) return rawText;
+
+  const escapedCode = code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return rawText
+    .replace(new RegExp(`\\s*\\[${escapedCode}\\]\\s*`, "g"), " ")
+    .replace(new RegExp(`\\s*\\(${escapedCode}\\)\\s*`, "g"), " ")
+    .replace(new RegExp(`\\b(?:group|room)?\\s*code\\s*[:#-]?\\s*${escapedCode}\\b`, "gi"), "")
+    .replace(new RegExp(`\\b${escapedCode}\\b`, "g"), "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function InAppBrowserNotice({ styles, browserInfo }) {
@@ -228,9 +238,14 @@ export default function InviteFlow({ slug, inviteCode }) {
   const hostName = creator?.first_name || "the host";
   const displayMembers = invite?.members?.slice(0, 4) ?? [];
   const attendeeCount = invite?.member_count ?? invite?.members?.length ?? 0;
-  const eventTitle = appendInviteCodeToTitle(
+  const displayInviteCode = String(inviteCode || invite?.invite_code || "").trim();
+  const eventTitle = stripInviteCodeFromText(
     invite?.subject || "Wander event",
-    inviteCode,
+    displayInviteCode,
+  ) || "Wander event";
+  const eventDescription = stripInviteCodeFromText(
+    invite?.description || "",
+    displayInviteCode,
   );
   const hasQuestions = joinQuestions.length > 0;
   const verifiedUserId = verifiedClerkUserId || webPhoneAuth.clerkUserId;
@@ -840,6 +855,8 @@ export default function InviteFlow({ slug, inviteCode }) {
               mapUrl={mapUrl}
               creator={creator}
               hostName={hostName}
+              inviteCode={displayInviteCode}
+              description={eventDescription}
               attendeeCount={attendeeCount}
               displayMembers={displayMembers}
               eventCard={flowState.eventCard}

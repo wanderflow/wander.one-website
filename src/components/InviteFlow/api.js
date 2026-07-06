@@ -50,6 +50,7 @@ export function normalizeInviteDetail(payload) {
       displayDetail.room_content ||
       displayDetail.group_content ||
       "",
+    invite_code: displayDetail.invite_code || detail.invite_code || "",
     creator_user_id: displayDetail.creator_user_id || "",
     member_count: displayDetail.member_count ?? members.length,
     members,
