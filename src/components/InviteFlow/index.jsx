@@ -43,6 +43,7 @@ import {
   trackWebJoinEvent,
 } from "./tracking";
 import { useWebPhoneAuth } from "./useWebPhoneAuth";
+import { resolveIdentityContinuation } from "./identityContinuation.mjs";
 
 function smsFailureReason(error) {
   const message = String(error?.message || error || "").toLowerCase();
@@ -435,41 +436,6 @@ export default function InviteFlow({ slug, inviteCode }) {
     trackEvent,
   ]);
 
-  const handleContinueRsvp = useCallback(async () => {
-    if (pendingAction) return;
-
-    setActionError("");
-    setPendingAction("rsvp");
-    try {
-      const session = await ensureWebSession();
-      if (session?.session_id) {
-        const payload = await updateWebRsvp({
-          sessionId: session.session_id,
-          rsvpStatus: flowState.rsvpIntent,
-        });
-        setWebSession(payload.session);
-      }
-      trackEvent("web_rsvp_selected", {
-        rsvp_status: flowState.rsvpIntent,
-        has_rsvp: hasRsvpFlow,
-        flow_type: flowType,
-      });
-      dispatch({ type: "CONTINUE_FROM_RSVP" });
-    } catch (err) {
-      showError(err.message);
-    } finally {
-      setPendingAction(null);
-    }
-  }, [
-    ensureWebSession,
-    flowState.rsvpIntent,
-    flowType,
-    hasRsvpFlow,
-    pendingAction,
-    showError,
-    trackEvent,
-  ]);
-
   const handleResultAction = useCallback(() => {
     const triggerPage =
       flowState.resultKind === "approved" || flowState.resultKind === "direct_join"
@@ -520,7 +486,7 @@ export default function InviteFlow({ slug, inviteCode }) {
     handleStoreOpen(triggerPage, { skipTracking: true });
   }, [browserInfo, flowState.resultKind, flowType, handleStoreOpen, hasRsvpFlow, inviteCode, slug, trackEvent]);
 
-  const completeFromBackend = useCallback(async (clerkUserId) => {
+  const completeFromBackend = useCallback(async (clerkUserId, displayName) => {
     const session = await ensureWebSession();
     if (!session?.session_id) {
       throw new Error("Missing web session");
@@ -533,13 +499,13 @@ export default function InviteFlow({ slug, inviteCode }) {
     const payload = await completeWebSession({
       sessionId: session.session_id,
       clerkUserId,
-      displayName: flowState.profile.name,
+      displayName: displayName ?? flowState.profile.name,
     });
     setWebSession(payload.session);
     return payload.session;
-  }, [ensureWebSession, flowState.profile]);
+  }, [ensureWebSession, flowState.profile.name]);
 
-  const continueAfterProfile = useCallback(async (clerkUserId) => {
+  const continueAfterProfile = useCallback(async (clerkUserId, displayName) => {
     const hasQuestions =
       (flowState.rsvpIntent === "going" || flowState.rsvpIntent === "maybe") &&
       joinQuestions.length > 0;
@@ -549,7 +515,7 @@ export default function InviteFlow({ slug, inviteCode }) {
       return;
     }
 
-    const completedSession = await completeFromBackend(clerkUserId);
+    const completedSession = await completeFromBackend(clerkUserId, displayName);
     trackRegistrationCompleted(completedSession, clerkUserId);
     dispatch({
       type: "APPLY_BACKEND_RESULT",
@@ -560,6 +526,100 @@ export default function InviteFlow({ slug, inviteCode }) {
     flowState.rsvpIntent,
     joinQuestions.length,
     trackRegistrationCompleted,
+  ]);
+
+  const continueFromIdentityStatus = useCallback(async (identityPayload, clerkUserId) => {
+    setWebSession(identityPayload.session);
+    const nextStep = resolveIdentityContinuation({
+      session: identityPayload.session,
+      identity: identityPayload.identity,
+      rsvpIntent: flowState.rsvpIntent,
+      questionCount: joinQuestions.length,
+    });
+
+    if (nextStep.name) {
+      setJoinedAsName(nextStep.name);
+      dispatch({ type: "UPDATE_PROFILE", field: "name", value: nextStep.name });
+    }
+
+    if (nextStep.type === "result") {
+      trackRegistrationCompleted(identityPayload.session, clerkUserId);
+      dispatch({
+        type: "APPLY_BACKEND_RESULT",
+        resultKind: nextStep.resultKind,
+      });
+      return;
+    }
+
+    if (nextStep.type === "name") {
+      dispatch({
+        type: "CONTINUE_TO_NAME",
+        name: nextStep.name,
+      });
+      return;
+    }
+
+    if (nextStep.type === "questions") {
+      dispatch({ type: "CONTINUE_TO_QUESTIONS" });
+      return;
+    }
+
+    await continueAfterProfile(clerkUserId, nextStep.name);
+  }, [
+    continueAfterProfile,
+    flowState.rsvpIntent,
+    joinQuestions.length,
+    trackRegistrationCompleted,
+  ]);
+
+  const handleContinueRsvp = useCallback(async () => {
+    if (pendingAction) return;
+
+    setActionError("");
+    setPendingAction("rsvp");
+    try {
+      const session = await ensureWebSession();
+      let updatedSession = session;
+      if (session?.session_id) {
+        const payload = await updateWebRsvp({
+          sessionId: session.session_id,
+          rsvpStatus: flowState.rsvpIntent,
+        });
+        setWebSession(payload.session);
+        updatedSession = payload.session || session;
+      }
+      trackEvent("web_rsvp_selected", {
+        rsvp_status: flowState.rsvpIntent,
+        has_rsvp: hasRsvpFlow,
+        flow_type: flowType,
+      });
+
+      if (webPhoneAuth.clerkUserId && updatedSession?.session_id) {
+        setVerifiedClerkUserId(webPhoneAuth.clerkUserId);
+        const identityPayload = await fetchWebIdentityStatus({
+          sessionId: updatedSession.session_id,
+          clerkUserId: webPhoneAuth.clerkUserId,
+        });
+        await continueFromIdentityStatus(identityPayload, webPhoneAuth.clerkUserId);
+        return;
+      }
+
+      dispatch({ type: "CONTINUE_FROM_RSVP" });
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      setPendingAction(null);
+    }
+  }, [
+    continueFromIdentityStatus,
+    ensureWebSession,
+    flowState.rsvpIntent,
+    flowType,
+    hasRsvpFlow,
+    pendingAction,
+    showError,
+    trackEvent,
+    webPhoneAuth.clerkUserId,
   ]);
 
   const handleContinuePhone = useCallback(async () => {
@@ -635,33 +695,7 @@ export default function InviteFlow({ slug, inviteCode }) {
           flow_type: flowType,
         },
       );
-      const identityResultKind = resultStatusToResultKind(
-        identityPayload.session?.result_status,
-      );
-      if (identityResultKind) {
-        trackRegistrationCompleted(identityPayload.session, verified.clerkUserId);
-        dispatch({
-          type: "APPLY_BACKEND_RESULT",
-          resultKind: identityResultKind,
-        });
-        return;
-      }
-
-      const firstName = identityPayload.identity?.first_name || "";
-      const needsProfile = identityPayload.identity?.needs_profile ?? !firstName;
-      if (needsProfile) {
-        dispatch({
-          type: "CONTINUE_TO_NAME",
-          name: firstName,
-        });
-        return;
-      }
-
-      if (firstName) {
-        setJoinedAsName(firstName);
-        dispatch({ type: "UPDATE_PROFILE", field: "name", value: firstName });
-      }
-      await continueAfterProfile(verified.clerkUserId);
+      await continueFromIdentityStatus(identityPayload, verified.clerkUserId);
     } catch (err) {
       if (!codeVerified) {
         trackEvent("web_sms_failed", {
@@ -676,7 +710,7 @@ export default function InviteFlow({ slug, inviteCode }) {
       setPendingAction(null);
     }
   }, [
-    continueAfterProfile,
+    continueFromIdentityStatus,
     ensureWebSession,
     flowState.otpCode,
     flowType,
@@ -685,7 +719,6 @@ export default function InviteFlow({ slug, inviteCode }) {
     pendingAction,
     showError,
     trackEvent,
-    trackRegistrationCompleted,
     webPhoneAuth,
   ]);
 
