@@ -13,7 +13,9 @@ import {
 } from "./machine";
 import { GRADIENT_CSS, OTP_LENGTH } from "./constants";
 import {
+  buildInviteShareUrl,
   buildMapSearchUrl,
+  copyToClipboard,
   detectInAppBrowser,
   formatDetailDate,
   getPhoneCountry,
@@ -376,6 +378,11 @@ export default function InviteFlow({ slug, inviteCode }) {
     return payload.session;
   }, [inviteCode, slug, webSession]);
 
+  const preserveInviteForStoreFallback = useCallback(() => {
+    if (!slug || !inviteCode) return;
+    copyToClipboard(buildInviteShareUrl({ slug, inviteCode }));
+  }, [inviteCode, slug]);
+
   const handleJoin = useCallback(async () => {
     if (pendingAction) return;
     setActionError("");
@@ -407,7 +414,14 @@ export default function InviteFlow({ slug, inviteCode }) {
 
     if (browserInfo?.isInAppBrowser) {
       setShowBrowserNotice(true);
-      handleStoreOpen("detail", { allowInAppBrowser: true });
+      preserveInviteForStoreFallback();
+      triggerDeepLink({
+        slug,
+        inviteCode,
+        onFallback: () => {
+          handleStoreOpen("detail", { allowInAppBrowser: true });
+        },
+      });
       return;
     }
 
@@ -415,6 +429,7 @@ export default function InviteFlow({ slug, inviteCode }) {
       slug,
       inviteCode,
       onFallback: () => {
+        preserveInviteForStoreFallback();
         handleStoreOpen("detail", { sameTab: true });
       },
     });
@@ -431,6 +446,7 @@ export default function InviteFlow({ slug, inviteCode }) {
     inviteCode,
     isShareMode,
     pendingAction,
+    preserveInviteForStoreFallback,
     showError,
     slug,
     trackEvent,
@@ -477,14 +493,16 @@ export default function InviteFlow({ slug, inviteCode }) {
       triggerDeepLink({
         slug,
         inviteCode,
-        onFallback: () =>
-          handleStoreOpen(triggerPage, { skipTracking: true, sameTab: true }),
+        onFallback: () => {
+          preserveInviteForStoreFallback();
+          handleStoreOpen(triggerPage, { skipTracking: true, sameTab: true });
+        },
       });
       return;
     }
 
     handleStoreOpen(triggerPage, { skipTracking: true });
-  }, [browserInfo, flowState.resultKind, flowType, handleStoreOpen, hasRsvpFlow, inviteCode, slug, trackEvent]);
+  }, [browserInfo, flowState.resultKind, flowType, handleStoreOpen, hasRsvpFlow, inviteCode, preserveInviteForStoreFallback, slug, trackEvent]);
 
   const completeFromBackend = useCallback(async (clerkUserId, displayName) => {
     const session = await ensureWebSession();

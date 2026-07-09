@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.wander.one.app",
+      "sha256_cert_fingerprints": [
+        "38:DC:C0:C2:87:AE:46:2A:00:09:F2:0F:52:23:53:79:6A:61:48:54:90:0B:C4:1A:56:BF:32:84:AD:E0:81:BF"
+      ]
+    }
+  }
+]

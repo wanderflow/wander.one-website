@@ -1,3 +1,12 @@
+import {
+  buildCustomSchemeUrl,
+  buildInviteAppLink,
+  buildInviteShareUrl,
+  isAppLinkHost,
+} from "./deepLinking.mjs";
+
+export { buildInviteShareUrl };
+
 export function formatDetailDate(date) {
   if (!date) return null;
 
@@ -144,28 +153,21 @@ export function triggerDeepLink({ slug, inviteCode, onFallback, onOpened }) {
     /iPhone|iPad|iPod/i.test(ua) ||
     (platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-  const encodedSlug = encodeURIComponent(slug);
-  const encodedInviteCode = encodeURIComponent(inviteCode || "");
+  const appLinkUrl = buildInviteAppLink({ slug, inviteCode });
+  const schemeUrl = buildCustomSchemeUrl({ slug, inviteCode });
+  const currentHref = window.location.href || "";
 
-  if (isAndroid) {
-    const fallbackUrl = encodeURIComponent(
-      "https://play.google.com/store/apps/details?id=com.wander.one.app",
-    );
-    window.location.href = `intent://share/${encodedSlug}?invite_code=${encodedInviteCode}#Intent;scheme=wanderone;package=com.wander.one.app;S.browser_fallback_url=${fallbackUrl};end`;
+  if ((isAndroid || isIos) && !isAppLinkHost(currentHref)) {
+    window.location.href = appLinkUrl;
     return;
   }
 
-  if (!isIos) {
+  if (!isAndroid && !isIos) {
     onFallback?.();
     return;
   }
 
-  const schemeUrl = `wanderone://share/${encodedSlug}?invite_code=${encodedInviteCode}`;
-  const iframe = document.createElement("iframe");
-  iframe.style.display = "none";
-  iframe.src = schemeUrl;
-  document.body.appendChild(iframe);
-  setTimeout(() => iframe.remove(), 500);
+  window.location.href = schemeUrl;
 
   const timer = setTimeout(() => {
     if (!document.hidden) {
