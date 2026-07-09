@@ -41,6 +41,10 @@ import {
   updateWebRsvp,
 } from "./api";
 import {
+  resultTriggerPage,
+  shouldOpenAppBeforeStore,
+} from "./resultAction.mjs";
+import {
   buildInviteTrackingContext,
   trackWebJoinEvent,
 } from "./tracking";
@@ -453,10 +457,7 @@ export default function InviteFlow({ slug, inviteCode }) {
   ]);
 
   const handleResultAction = useCallback(() => {
-    const triggerPage =
-      flowState.resultKind === "approved" || flowState.resultKind === "direct_join"
-        ? "confirmation"
-        : flowState.resultKind || "confirmation";
+    const triggerPage = resultTriggerPage(flowState.resultKind);
     trackEvent(
       "web_download_tapped",
       {
@@ -467,10 +468,7 @@ export default function InviteFlow({ slug, inviteCode }) {
       { preferBeacon: true, keepalive: true },
     );
 
-    if (
-      flowState.resultKind === "approved" ||
-      flowState.resultKind === "direct_join"
-    ) {
+    if (shouldOpenAppBeforeStore(flowState.resultKind)) {
       if (browserInfo?.isInAppBrowser) {
         setShowBrowserNotice(true);
         trackEvent(
