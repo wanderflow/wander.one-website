@@ -502,14 +502,21 @@ export default function InviteFlow({ slug, inviteCode }) {
     handleStoreOpen(triggerPage, { skipTracking: true });
   }, [browserInfo, flowState.resultKind, flowType, handleStoreOpen, hasRsvpFlow, inviteCode, preserveInviteForStoreFallback, slug, trackEvent]);
 
-  const completeFromBackend = useCallback(async (clerkUserId, displayName) => {
-    const session = await ensureWebSession();
+  const completeFromBackend = useCallback(async (clerkUserId, displayName, sessionOverride = null) => {
+    const session = sessionOverride || await ensureWebSession();
     if (!session?.session_id) {
       throw new Error("Missing web session");
     }
 
     if (!clerkUserId) {
       throw new Error("Missing verified Clerk user");
+    }
+
+    const requiresJoinQuestions =
+      (flowState.rsvpIntent === "going" || flowState.rsvpIntent === "maybe") &&
+      joinQuestions.length > 0;
+    if (requiresJoinQuestions && !session.parent_expression_id) {
+      throw new Error("Please answer the questions before joining.");
     }
 
     const payload = await completeWebSession({
@@ -519,7 +526,12 @@ export default function InviteFlow({ slug, inviteCode }) {
     });
     setWebSession(payload.session);
     return payload.session;
-  }, [ensureWebSession, flowState.profile.name]);
+  }, [
+    ensureWebSession,
+    flowState.profile.name,
+    flowState.rsvpIntent,
+    joinQuestions.length,
+  ]);
 
   const continueAfterProfile = useCallback(async (clerkUserId, displayName) => {
     const hasQuestions =
@@ -821,7 +833,11 @@ export default function InviteFlow({ slug, inviteCode }) {
           flow_type: flowType,
         },
       );
-      const completed = await completeFromBackend(clerkUserId);
+      const completed = await completeFromBackend(
+        clerkUserId,
+        undefined,
+        answersPayload.session,
+      );
       setWebSession(completed);
       trackRegistrationCompleted(completed, clerkUserId);
       dispatch({
