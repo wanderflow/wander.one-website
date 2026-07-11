@@ -1,5 +1,5 @@
 export const APP_LINK_BASE_URL = "https://links.wander.one";
-export const SHARE_BASE_URL = "https://wander.one";
+export const SHARE_BASE_URL = "https://www.wander.one";
 
 function buildSharePath(slug) {
   return `/share/${encodeURIComponent(String(slug || "").trim())}`;
