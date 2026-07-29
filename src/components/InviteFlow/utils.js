@@ -3,9 +3,10 @@ import {
   buildInviteAppLink,
   buildInviteShareUrl,
   isAppLinkHost,
+  resolveInviteLaunchTarget,
 } from "./deepLinking.mjs";
 
-export { buildInviteShareUrl };
+export { buildInviteShareUrl, resolveInviteLaunchTarget };
 
 export function formatDetailDate(date) {
   if (!date) return null;
@@ -146,6 +147,12 @@ export function detectInAppBrowser() {
 }
 
 export function triggerDeepLink({ slug, inviteCode, onFallback, onOpened }) {
+  const launchTarget = resolveInviteLaunchTarget({ slug, inviteCode });
+  if (launchTarget.type === "store") {
+    onFallback?.();
+    return;
+  }
+
   const ua = navigator.userAgent || "";
   const platform = navigator.platform || "";
   const isAndroid = /Android/i.test(ua);
@@ -153,7 +160,7 @@ export function triggerDeepLink({ slug, inviteCode, onFallback, onOpened }) {
     /iPhone|iPad|iPod/i.test(ua) ||
     (platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-  const appLinkUrl = buildInviteAppLink({ slug, inviteCode });
+  const appLinkUrl = launchTarget.url;
   const schemeUrl = buildCustomSchemeUrl({ slug, inviteCode });
   const currentHref = window.location.href || "";
 

@@ -1,12 +1,14 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import {
+import * as deepLinking from "./deepLinking.mjs";
+
+const {
   buildCustomSchemeUrl,
   buildInviteAppLink,
   buildInviteShareUrl,
   isAppLinkHost,
-} from "./deepLinking.mjs";
+} = deepLinking;
 
 describe("invite deep linking", () => {
   it("builds a verified app link on the links domain with the invite code", () => {
@@ -19,7 +21,7 @@ describe("invite deep linking", () => {
   it("builds the canonical share link used for clipboard fallback", () => {
     assert.equal(
       buildInviteShareUrl({ slug: "abc", inviteCode: "9 8" }),
-      "https://wander.one/share/abc?invite_code=9%208",
+      "https://www.wander.one/share/abc?invite_code=9%208",
     );
   });
 
@@ -33,5 +35,26 @@ describe("invite deep linking", () => {
   it("detects when the current host is already the verified app-link host", () => {
     assert.equal(isAppLinkHost("https://links.wander.one/download"), true);
     assert.equal(isAppLinkHost("https://wander.one/share/abc"), false);
+  });
+
+  it("routes group actions to the verified app link before the store", () => {
+    assert.equal(typeof deepLinking.resolveInviteLaunchTarget, "function");
+    assert.deepEqual(
+      deepLinking.resolveInviteLaunchTarget({
+        slug: "summer dinner",
+        inviteCode: "0123",
+      }),
+      {
+        type: "app_link",
+        url: "https://links.wander.one/share/summer%20dinner?invite_code=0123",
+      },
+    );
+    assert.deepEqual(
+      deepLinking.resolveInviteLaunchTarget({
+        slug: "",
+        inviteCode: "0123",
+      }),
+      { type: "store" },
+    );
   });
 });

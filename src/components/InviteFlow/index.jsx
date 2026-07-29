@@ -42,7 +42,6 @@ import {
 } from "./api";
 import {
   resultTriggerPage,
-  shouldOpenAppBeforeStore,
 } from "./resultAction.mjs";
 import {
   buildInviteTrackingContext,
@@ -82,25 +81,6 @@ function stripInviteCodeFromText(text, inviteCode) {
     .trim();
 }
 
-function InAppBrowserNotice({ styles, browserInfo }) {
-  if (!browserInfo?.isInAppBrowser) return null;
-
-  return (
-    <>
-      <div className={styles.browserNoticeSpacer} aria-hidden="true" />
-      <div className={styles.browserNotice} role="note" aria-label="Open in browser">
-        <span className={styles.browserNoticeIcon} aria-hidden="true">
-          🌐
-        </span>
-        <div className={styles.browserNoticeCopy}>
-          <p className={styles.browserNoticeTitle}>Tap ... → Open in browser</p>
-          <p className={styles.browserNoticeText}>Open in browser first to join</p>
-        </div>
-      </div>
-    </>
-  );
-}
-
 export default function InviteFlow({ slug, inviteCode }) {
   const [invite, setInvite] = useState(null);
   const [webSession, setWebSession] = useState(null);
@@ -114,7 +94,6 @@ export default function InviteFlow({ slug, inviteCode }) {
   const [pendingAction, setPendingAction] = useState(null);
   const [browserInfo, setBrowserInfo] = useState(null);
   const [storeUrl, setStoreUrl] = useState("");
-  const [showBrowserNotice, setShowBrowserNotice] = useState(false);
   const [flowState, dispatch] = useReducer(inviteFlowReducer, undefined, createFlowState);
   const pageViewTrackedKeyRef = useRef("");
   const funnelStartedAtRef = useRef(null);
@@ -130,7 +109,6 @@ export default function InviteFlow({ slug, inviteCode }) {
     const detectedBrowser = detectInAppBrowser();
     setBrowserInfo(detectedBrowser);
     setStoreUrl(getAppStoreUrl());
-    setShowBrowserNotice(detectedBrowser.isInAppBrowser);
   }, []);
 
   const showError = useCallback((message) => {
@@ -315,37 +293,11 @@ export default function InviteFlow({ slug, inviteCode }) {
     ],
   );
 
-  const handleStoreOpen = useCallback(
-    (triggerPage = "detail", options = {}) => {
-      const normalizedTriggerPage =
-        typeof triggerPage === "string" ? triggerPage : "detail";
-      if (browserInfo?.isInAppBrowser) {
-        setShowBrowserNotice(true);
-        trackEvent(
-          "web_in_app_browser_store_attempt",
-          {
-            trigger_page: normalizedTriggerPage,
-            flow_type: flowType,
-            has_rsvp: hasRsvpFlow,
-            browser_app: browserInfo.appName,
-          },
-          { preferBeacon: true, keepalive: true },
-        );
-      }
-      if (!options.skipTracking) {
-        trackEvent(
-          "web_download_tapped",
-          {
-            trigger_page: normalizedTriggerPage,
-            flow_type: flowType,
-            has_rsvp: hasRsvpFlow,
-          },
-          { preferBeacon: true, keepalive: true },
-        );
-      }
+  const openStoreFallback = useCallback(
+    () => {
       window.location.assign(storeUrl || getAppStoreUrl());
     },
-    [browserInfo, flowType, hasRsvpFlow, storeUrl, trackEvent],
+    [storeUrl],
   );
 
   useEffect(() => {
@@ -383,9 +335,59 @@ export default function InviteFlow({ slug, inviteCode }) {
   }, [inviteCode, slug, webSession]);
 
   const preserveInviteForStoreFallback = useCallback(() => {
-    if (!slug || !inviteCode) return;
-    copyToClipboard(buildInviteShareUrl({ slug, inviteCode }));
-  }, [inviteCode, slug]);
+    if (!slug || !displayInviteCode) return;
+    copyToClipboard(
+      buildInviteShareUrl({ slug, inviteCode: displayInviteCode }),
+    );
+  }, [displayInviteCode, slug]);
+
+  const handleAppOpen = useCallback(
+    (triggerPage = "detail", options = {}) => {
+      const normalizedTriggerPage =
+        typeof triggerPage === "string" ? triggerPage : "detail";
+      if (browserInfo?.isInAppBrowser) {
+        trackEvent(
+          "web_in_app_browser_store_attempt",
+          {
+            trigger_page: normalizedTriggerPage,
+            flow_type: flowType,
+            has_rsvp: hasRsvpFlow,
+            browser_app: browserInfo.appName,
+          },
+          { preferBeacon: true, keepalive: true },
+        );
+      }
+
+      if (!options.skipTracking) {
+        trackEvent(
+          "web_download_tapped",
+          {
+            trigger_page: normalizedTriggerPage,
+            flow_type: flowType,
+            has_rsvp: hasRsvpFlow,
+          },
+          { preferBeacon: true, keepalive: true },
+        );
+      }
+
+      preserveInviteForStoreFallback();
+      triggerDeepLink({
+        slug,
+        inviteCode: displayInviteCode,
+        onFallback: openStoreFallback,
+      });
+    },
+    [
+      browserInfo,
+      displayInviteCode,
+      flowType,
+      hasRsvpFlow,
+      openStoreFallback,
+      preserveInviteForStoreFallback,
+      slug,
+      trackEvent,
+    ],
+  );
 
   const handleJoin = useCallback(async () => {
     if (pendingAction) return;
@@ -399,7 +401,7 @@ export default function InviteFlow({ slug, inviteCode }) {
     });
 
     if (!isShareMode) {
-      handleStoreOpen();
+      handleAppOpen();
       return;
     }
 
@@ -416,43 +418,19 @@ export default function InviteFlow({ slug, inviteCode }) {
       return;
     }
 
-    if (browserInfo?.isInAppBrowser) {
-      setShowBrowserNotice(true);
-      preserveInviteForStoreFallback();
-      triggerDeepLink({
-        slug,
-        inviteCode,
-        onFallback: () => {
-          handleStoreOpen("detail", { allowInAppBrowser: true });
-        },
-      });
-      return;
-    }
-
-    triggerDeepLink({
-      slug,
-      inviteCode,
-      onFallback: () => {
-        preserveInviteForStoreFallback();
-        handleStoreOpen("detail", { sameTab: true });
-      },
-    });
+    handleAppOpen("detail");
   }, [
     canJoinOnWeb,
     defaultAnswers,
-    handleStoreOpen,
+    handleAppOpen,
     hasQuestions,
     hasRsvpFlow,
     flowType,
     ensureWebSession,
     attendeeCount,
-    browserInfo,
-    inviteCode,
     isShareMode,
     pendingAction,
-    preserveInviteForStoreFallback,
     showError,
-    slug,
     trackEvent,
   ]);
 
@@ -468,39 +446,14 @@ export default function InviteFlow({ slug, inviteCode }) {
       { preferBeacon: true, keepalive: true },
     );
 
-    if (shouldOpenAppBeforeStore(flowState.resultKind)) {
-      if (browserInfo?.isInAppBrowser) {
-        setShowBrowserNotice(true);
-        trackEvent(
-          "web_in_app_browser_blocked",
-          {
-            trigger_page: triggerPage,
-            flow_type: flowType,
-            has_rsvp: hasRsvpFlow,
-            browser_app: browserInfo.appName,
-          },
-          { preferBeacon: true, keepalive: true },
-        );
-        handleStoreOpen(triggerPage, {
-          allowInAppBrowser: true,
-          skipTracking: true,
-        });
-        return;
-      }
-
-      triggerDeepLink({
-        slug,
-        inviteCode,
-        onFallback: () => {
-          preserveInviteForStoreFallback();
-          handleStoreOpen(triggerPage, { skipTracking: true, sameTab: true });
-        },
-      });
-      return;
-    }
-
-    handleStoreOpen(triggerPage, { skipTracking: true });
-  }, [browserInfo, flowState.resultKind, flowType, handleStoreOpen, hasRsvpFlow, inviteCode, preserveInviteForStoreFallback, slug, trackEvent]);
+    handleAppOpen(triggerPage, { skipTracking: true });
+  }, [
+    flowState.resultKind,
+    flowType,
+    handleAppOpen,
+    hasRsvpFlow,
+    trackEvent,
+  ]);
 
   const completeFromBackend = useCallback(async (clerkUserId, displayName, sessionOverride = null) => {
     const session = sessionOverride || await ensureWebSession();
@@ -865,13 +818,6 @@ export default function InviteFlow({ slug, inviteCode }) {
     webPhoneAuth.clerkUserId,
   ]);
 
-  const browserNotice = showBrowserNotice ? (
-    <InAppBrowserNotice
-      styles={styles}
-      browserInfo={browserInfo}
-    />
-  ) : null;
-
   if (loading) {
     return (
       <div className={styles.wrap}>
@@ -931,9 +877,8 @@ export default function InviteFlow({ slug, inviteCode }) {
               }
               onContinueRsvp={handleContinueRsvp}
               onJoin={handleJoin}
-              onStoreOpen={handleStoreOpen}
+              onStoreOpen={handleAppOpen}
               onResetToJoin={() => dispatch({ type: "RESET_TO_JOIN" })}
-              browserNotice={browserNotice}
               isJoining={pendingAction === "join"}
               isSubmittingRsvp={pendingAction === "rsvp"}
               error={actionError}

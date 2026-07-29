@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { RSVP_OPTIONS } from "../constants";
+import { resolveFloatingEventAction } from "../resultAction.mjs";
 
 function EventCard({
   styles,
@@ -15,12 +16,12 @@ function EventCard({
   onResetToJoin,
   hostName,
   isJoining = false,
-  joinCardRef = null,
+  actionCardRef = null,
   error = "",
 }) {
   if (eventCard === "pending") {
     return (
-      <section className={styles.sheetCard}>
+      <section ref={actionCardRef} className={styles.sheetCard}>
         <div className={styles.statusTitleRow}>
           <span className={styles.statusIcon}>⌛</span>
           <h2 className={styles.sheetTitle}>Request pending</h2>
@@ -42,7 +43,7 @@ function EventCard({
 
   if (eventCard === "approved") {
     return (
-      <section className={styles.sheetCard}>
+      <section ref={actionCardRef} className={styles.sheetCard}>
         <div className={styles.statusTitleRow}>
           <span className={styles.statusIcon}>👍</span>
           <h2 className={styles.sheetTitle}>You&apos;re on the list</h2>
@@ -63,7 +64,7 @@ function EventCard({
 
   if (eventCard === "rejected") {
     return (
-      <section className={styles.sheetCard}>
+      <section ref={actionCardRef} className={styles.sheetCard}>
         <div className={styles.statusTitleRow}>
           <span className={`${styles.statusIcon} ${styles.statusIconRejected}`}>✕</span>
           <h2 className={styles.sheetTitle}>You weren&apos;t added</h2>
@@ -85,7 +86,7 @@ function EventCard({
 
   if (eventCard === "maybe") {
     return (
-      <section className={styles.sheetCard}>
+      <section ref={actionCardRef} className={styles.sheetCard}>
         <div className={styles.statusTitleRow}>
           <span className={styles.statusIcon}>🤔</span>
           <h2 className={styles.sheetTitle}>You&apos;re marked as maybe</h2>
@@ -107,7 +108,7 @@ function EventCard({
 
   if (eventCard === "cant_go") {
     return (
-      <section className={styles.sheetCard}>
+      <section ref={actionCardRef} className={styles.sheetCard}>
         <div className={styles.statusTitleRow}>
           <span className={styles.statusIcon}>🥲</span>
           <h2 className={styles.sheetTitle}>You can&apos;t make it</h2>
@@ -127,7 +128,7 @@ function EventCard({
   }
 
   return (
-    <section ref={joinCardRef} className={styles.joinCard}>
+    <section ref={actionCardRef} className={styles.joinCard}>
       <h2 className={styles.joinCardTitle}>See who&apos;s going</h2>
       <p className={styles.joinCardText}>
         Join the list to see everyone attending {eventTitle}.
@@ -230,15 +231,15 @@ export default function EventScreen({
   onJoin,
   onStoreOpen,
   onResetToJoin,
-  browserNotice = null,
   isJoining = false,
   isSubmittingRsvp = false,
   error = "",
 }) {
   const isRsvpModalOpen = eventCard === "rsvp";
-  const showFloatingJoin = eventCard === "join" && !isRsvpModalOpen;
-  const joinCardRef = useRef(null);
-  const [isJoinCardVisible, setIsJoinCardVisible] = useState(false);
+  const floatingAction = resolveFloatingEventAction(eventCard);
+  const showFloatingAction = Boolean(floatingAction) && !isRsvpModalOpen;
+  const actionCardRef = useRef(null);
+  const [isActionCardVisible, setIsActionCardVisible] = useState(false);
   const cleanInviteCode = String(inviteCode || "").trim();
 
   const handleCopyInviteCode = async () => {
@@ -251,23 +252,39 @@ export default function EventScreen({
   };
 
   useEffect(() => {
-    if (!showFloatingJoin || !joinCardRef.current) {
-      setIsJoinCardVisible(false);
+    if (!showFloatingAction || !actionCardRef.current) {
+      setIsActionCardVisible(false);
       return undefined;
     }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsJoinCardVisible(Boolean(entry?.isIntersecting));
+        setIsActionCardVisible(Boolean(entry?.isIntersecting));
       },
       {
         threshold: 0.2,
       },
     );
 
-    observer.observe(joinCardRef.current);
+    observer.observe(actionCardRef.current);
     return () => observer.disconnect();
-  }, [showFloatingJoin]);
+  }, [eventCard, showFloatingAction]);
+
+  const handleFloatingAction = () => {
+    if (floatingAction?.type === "join") {
+      onJoin();
+      return;
+    }
+
+    if (floatingAction?.type === "app") {
+      onStoreOpen(floatingAction.triggerPage);
+      return;
+    }
+
+    if (floatingAction?.type === "reset") {
+      onResetToJoin();
+    }
+  };
 
   return (
     <div className={styles.eventViewport}>
@@ -306,8 +323,6 @@ export default function EventScreen({
             </button>
           </div>
         </header>
-
-        {browserNotice}
 
         <div className={styles.mainContent}>
           <h1 className={styles.pageTitle}>{eventTitle}</h1>
@@ -464,7 +479,7 @@ export default function EventScreen({
               onResetToJoin={onResetToJoin}
               hostName={hostName}
               isJoining={isJoining}
-              joinCardRef={joinCardRef}
+              actionCardRef={actionCardRef}
               error={error}
             />
           )}
@@ -519,22 +534,28 @@ export default function EventScreen({
         )}
       </div>
 
-      {showFloatingJoin && (
+      {showFloatingAction && (
         <div
           className={
-            isJoinCardVisible
+            isActionCardVisible
               ? `${styles.floatingJoinBar} ${styles.floatingJoinBarHidden}`
               : styles.floatingJoinBar
           }
         >
           <button
             type="button"
-            onClick={onJoin}
+            onClick={handleFloatingAction}
             className={styles.floatingJoinButton}
-            disabled={isJoining}
+            disabled={floatingAction.type === "join" && isJoining}
           >
-            {isJoining && <span className={styles.buttonSpinner} aria-hidden="true" />}
-            <span>{isJoining ? "Loading..." : "Join"}</span>
+            {floatingAction.type === "join" && isJoining && (
+              <span className={styles.buttonSpinner} aria-hidden="true" />
+            )}
+            <span>
+              {floatingAction.type === "join" && isJoining
+                ? "Loading..."
+                : floatingAction.label}
+            </span>
           </button>
         </div>
       )}
