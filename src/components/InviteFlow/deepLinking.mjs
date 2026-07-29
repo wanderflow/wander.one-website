@@ -31,6 +31,23 @@ export function buildInviteShareUrl({
   return appendInviteCode(url, inviteCode);
 }
 
+export function resolveInviteLaunchTarget({ slug, inviteCode }) {
+  const normalizedSlug = String(slug || "").trim();
+  const normalizedInviteCode = String(inviteCode || "").trim();
+
+  if (!normalizedSlug || !normalizedInviteCode) {
+    return { type: "store" };
+  }
+
+  return {
+    type: "app_link",
+    url: buildInviteAppLink({
+      slug: normalizedSlug,
+      inviteCode: normalizedInviteCode,
+    }),
+  };
+}
+
 export function buildCustomSchemeUrl({ slug, inviteCode }) {
   const encodedSlug = encodeURIComponent(String(slug || "").trim());
   const encodedInviteCode = encodeURIComponent(String(inviteCode || "").trim());

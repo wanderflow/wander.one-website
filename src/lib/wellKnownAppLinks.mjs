@@ -16,6 +16,13 @@ function shouldEnableAppLinks(host) {
   return normalizeHost(host) === "links.wander.one";
 }
 
+export function resolveShareRewrite({ host, slug }) {
+  return {
+    pathname: "/download",
+    slug: shouldEnableAppLinks(host) ? null : String(slug || "").trim(),
+  };
+}
+
 export function buildAppleAppSiteAssociation(host) {
   return {
     applinks: {

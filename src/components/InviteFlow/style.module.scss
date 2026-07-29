@@ -1110,55 +1110,6 @@
   font-weight: 700;
 }
 
-.browserNoticeSpacer {
-  height: 84px;
-  flex: 0 0 auto;
-}
-
-.browserNotice {
-  width: 100%;
-  position: fixed;
-  top: 72px;
-  left: 0;
-  right: 0;
-  z-index: 80;
-  padding: 14px 22px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: #fff7e6;
-  box-shadow: 0 1px 0 rgba(43, 36, 56, 0.08);
-}
-
-.browserNoticeIcon {
-  flex: 0 0 auto;
-  font-size: 38px;
-  line-height: 1;
-}
-
-.browserNoticeCopy {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.browserNoticeTitle {
-  margin: 0;
-  color: #111111;
-  font-size: 20px;
-  line-height: 1.14;
-  font-weight: 800;
-}
-
-.browserNoticeText {
-  margin: 0;
-  color: rgba(43, 36, 56, 0.42);
-  font-size: 18px;
-  line-height: 1.18;
-  font-weight: 500;
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -1203,10 +1154,6 @@
     margin-top: 2px;
   }
 
-  .browserNotice {
-    padding-right: 26px;
-    padding-left: 26px;
-  }
 }
 
 @media (max-width: 420px) {
@@ -1227,25 +1174,4 @@
     gap: 18px;
   }
 
-  .browserNotice {
-    gap: 12px;
-    padding-right: 16px;
-    padding-left: 16px;
-  }
-
-  .browserNoticeSpacer {
-    height: 78px;
-  }
-
-  .browserNoticeIcon {
-    font-size: 34px;
-  }
-
-  .browserNoticeTitle {
-    font-size: 18px;
-  }
-
-  .browserNoticeText {
-    font-size: 16px;
-  }
 }

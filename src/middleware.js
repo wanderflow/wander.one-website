@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolveShareRewrite } from "./lib/wellKnownAppLinks.mjs";
 
 export function middleware(request) {
   const sharePrefix = "/share/";
@@ -13,9 +14,17 @@ export function middleware(request) {
     return NextResponse.next();
   }
 
+  const rewrite = resolveShareRewrite({
+    host: request.headers.get("host") || request.nextUrl.host,
+    slug,
+  });
   const url = request.nextUrl.clone();
-  url.pathname = "/download";
-  url.searchParams.set("slug", slug);
+  url.pathname = rewrite.pathname;
+  if (rewrite.slug) {
+    url.searchParams.set("slug", rewrite.slug);
+  } else {
+    url.searchParams.delete("slug");
+  }
 
   return NextResponse.rewrite(url);
 }
