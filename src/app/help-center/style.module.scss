@@ -66,6 +66,12 @@
   }
 }
 
+@media (min-width: 860px) {
+  .faqGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .card {
   display: block;
   padding: clamp(0.82rem, 2.2vw, 1rem) clamp(0.9rem, 2.3vw, 1.1rem);

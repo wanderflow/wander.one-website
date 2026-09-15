@@ -57,4 +57,17 @@ describe("invite deep linking", () => {
       { type: "store" },
     );
   });
+
+  it("preserves the share destination when an invite code is absent", () => {
+    assert.deepEqual(
+      deepLinking.resolveInviteLaunchTarget({
+        slug: "summer dinner",
+        inviteCode: "",
+      }),
+      {
+        type: "app_link",
+        url: "https://links.wander.one/share/summer%20dinner",
+      },
+    );
+  });
 });

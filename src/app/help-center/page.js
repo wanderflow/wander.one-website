@@ -53,14 +53,19 @@ const HELP_CATEGORIES = [
     title: 'FAQ',
     items: [
       {
-        title: 'Payments and tickets',
+        title: 'Subscriptions',
         blurb:
-          'Placeholder for paid events, refunds, and receipts when you enable billing.',
+          `Renew automatically until you cancel. Canceling keeps your access through the end of the period you already paid for—no partial refunds for time you don't use.`,
       },
       {
-        title: 'Data and privacy',
+        title: 'Message credits',
         blurb:
-          'High-level overview; link to your Privacy Policy for full legal text.',
+          `One-time purchases are used right away and can't be refunded once spent.`,
+      },
+      {
+        title: 'Activity tickets',
+        blurb:
+          `Canceled free up to 24 hours before the event for a full refund. Canceling within 24 hours may come with a cancellation fee, and no-shows aren't refunded.`,
       },
     ],
   },
@@ -81,7 +86,11 @@ export default function HelpCenterPage() {
           {HELP_CATEGORIES.map((cat) => (
             <section key={cat.title} className={styles.category}>
               <h2 className={styles.categoryTitle}>{cat.title}</h2>
-              <div className={styles.grid}>
+              <div
+                className={`${styles.grid} ${
+                  cat.title === 'FAQ' ? styles.faqGrid : ''
+                }`}
+              >
                 {cat.items.map((item) => (
                   <a
                     key={item.title}

@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { RSVP_OPTIONS } from "../constants";
-import { resolveFloatingEventAction } from "../resultAction.mjs";
+import {
+  resolveFloatingEventAction,
+  resolveInteractiveFloatingEventAction,
+} from "../resultAction.mjs";
 
 function EventCard({
   styles,
@@ -240,6 +243,10 @@ export default function EventScreen({
   const showFloatingAction = Boolean(floatingAction) && !isRsvpModalOpen;
   const actionCardRef = useRef(null);
   const [isActionCardVisible, setIsActionCardVisible] = useState(false);
+  const interactiveFloatingAction = resolveInteractiveFloatingEventAction({
+    action: floatingAction,
+    isActionCardVisible,
+  });
   const cleanInviteCode = String(inviteCode || "").trim();
 
   const handleCopyInviteCode = async () => {
@@ -271,17 +278,17 @@ export default function EventScreen({
   }, [eventCard, showFloatingAction]);
 
   const handleFloatingAction = () => {
-    if (floatingAction?.type === "join") {
+    if (interactiveFloatingAction?.type === "join") {
       onJoin();
       return;
     }
 
-    if (floatingAction?.type === "app") {
-      onStoreOpen(floatingAction.triggerPage);
+    if (interactiveFloatingAction?.type === "app") {
+      onStoreOpen(interactiveFloatingAction.triggerPage);
       return;
     }
 
-    if (floatingAction?.type === "reset") {
+    if (interactiveFloatingAction?.type === "reset") {
       onResetToJoin();
     }
   };
@@ -542,21 +549,23 @@ export default function EventScreen({
               : styles.floatingJoinBar
           }
         >
-          <button
-            type="button"
-            onClick={handleFloatingAction}
-            className={styles.floatingJoinButton}
-            disabled={floatingAction.type === "join" && isJoining}
-          >
-            {floatingAction.type === "join" && isJoining && (
-              <span className={styles.buttonSpinner} aria-hidden="true" />
-            )}
-            <span>
-              {floatingAction.type === "join" && isJoining
-                ? "Loading..."
-                : floatingAction.label}
-            </span>
-          </button>
+          {interactiveFloatingAction && (
+            <button
+              type="button"
+              onClick={handleFloatingAction}
+              className={styles.floatingJoinButton}
+              disabled={interactiveFloatingAction.type === "join" && isJoining}
+            >
+              {interactiveFloatingAction.type === "join" && isJoining && (
+                <span className={styles.buttonSpinner} aria-hidden="true" />
+              )}
+              <span>
+                {interactiveFloatingAction.type === "join" && isJoining
+                  ? "Loading..."
+                  : interactiveFloatingAction.label}
+              </span>
+            </button>
+          )}
         </div>
       )}
 

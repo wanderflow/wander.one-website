@@ -35,7 +35,7 @@ export function resolveInviteLaunchTarget({ slug, inviteCode }) {
   const normalizedSlug = String(slug || "").trim();
   const normalizedInviteCode = String(inviteCode || "").trim();
 
-  if (!normalizedSlug || !normalizedInviteCode) {
+  if (!normalizedSlug) {
     return { type: "store" };
   }
 

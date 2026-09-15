@@ -46,3 +46,10 @@ export function resolveFloatingEventAction(eventCard) {
 
   return null;
 }
+
+export function resolveInteractiveFloatingEventAction({
+  action,
+  isActionCardVisible,
+}) {
+  return isActionCardVisible ? null : action;
+}

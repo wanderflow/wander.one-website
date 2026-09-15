@@ -51,4 +51,26 @@ describe("result action routing", () => {
     }
     assert.equal(resultActions.resolveFloatingEventAction("rsvp"), null);
   });
+
+  it("removes the floating button while its matching action card is visible", () => {
+    assert.equal(
+      typeof resultActions.resolveInteractiveFloatingEventAction,
+      "function",
+    );
+    const action = resultActions.resolveFloatingEventAction("approved");
+    assert.equal(
+      resultActions.resolveInteractiveFloatingEventAction({
+        action,
+        isActionCardVisible: true,
+      }),
+      null,
+    );
+    assert.deepEqual(
+      resultActions.resolveInteractiveFloatingEventAction({
+        action,
+        isActionCardVisible: false,
+      }),
+      action,
+    );
+  });
 });
