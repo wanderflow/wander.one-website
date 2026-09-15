@@ -50,7 +50,7 @@ const HELP_CATEGORIES = [
     ],
   },
   {
-    title: 'FAQ',
+    title: 'Payments and tickets',
     items: [
       {
         title: 'Subscriptions',
@@ -88,7 +88,7 @@ export default function HelpCenterPage() {
               <h2 className={styles.categoryTitle}>{cat.title}</h2>
               <div
                 className={`${styles.grid} ${
-                  cat.title === 'FAQ' ? styles.faqGrid : ''
+                  cat.title === 'Payments and tickets' ? styles.faqGrid : ''
                 }`}
               >
                 {cat.items.map((item) => (
