@@ -1,7 +1,16 @@
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { resolveShareRewrite } from "./lib/wellKnownAppLinks.mjs";
 
-export function middleware(request) {
+const textConsentMiddleware = clerkMiddleware();
+
+export function middleware(request, event) {
+  if (request.nextUrl.pathname === "/api/text-message-consent") {
+    if (!process.env.CLERK_SECRET_KEY) {
+      return NextResponse.json({ detail: "Text updates are temporarily unavailable. Please try again later." }, { status: 503 });
+    }
+    return textConsentMiddleware(request, event);
+  }
   const sharePrefix = "/share/";
   const { pathname } = request.nextUrl;
 
@@ -30,5 +39,5 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: ["/share/:path*"],
+  matcher: ["/share/:path*", "/api/text-message-consent"],
 };

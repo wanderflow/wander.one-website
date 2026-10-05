@@ -48,6 +48,8 @@ import {
   trackWebJoinEvent,
 } from "./tracking";
 import { useWebPhoneAuth } from "./useWebPhoneAuth";
+import { isJoinIntent } from "./consent/policy.mjs";
+import { useJoinConsent } from "./consent/useJoinConsent";
 import { resolveIdentityContinuation } from "./identityContinuation.mjs";
 
 function smsFailureReason(error) {
@@ -258,6 +260,8 @@ export default function InviteFlow({ slug, inviteCode }) {
       trackWebJoinEvent(eventType, trackingContext, properties, options),
     [trackingContext],
   );
+
+  const {requireConsent, consentModal} = useJoinConsent({ownerId: invite?.creator_user_id, fallbackPhone: webPhoneAuth.phoneNumber, trackEvent});
 
   const funnelDurationSec = useCallback(() => {
     const startedAt = funnelStartedAtRef.current || Date.now();
@@ -472,6 +476,8 @@ export default function InviteFlow({ slug, inviteCode }) {
       throw new Error("Please answer the questions before joining.");
     }
 
+    if (isJoinIntent(flowState.rsvpIntent) && !await requireConsent(clerkUserId, session.session_id)) throw new Error("Join cancelled.");
+
     const payload = await completeWebSession({
       sessionId: session.session_id,
       clerkUserId,
@@ -481,6 +487,7 @@ export default function InviteFlow({ slug, inviteCode }) {
     return payload.session;
   }, [
     ensureWebSession,
+    requireConsent,
     flowState.profile.name,
     flowState.rsvpIntent,
     joinQuestions.length,
@@ -852,6 +859,7 @@ export default function InviteFlow({ slug, inviteCode }) {
 
   return (
     <div className={styles.wrap}>
+      {consentModal}
       <div className={styles.phoneShell}>
         <ScreenFrame>
           {flowState.view === FLOW_VIEW.EVENT && (
