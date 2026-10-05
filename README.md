@@ -34,12 +34,3 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Text updates on web joins
-
-Set `CLERK_SECRET_KEY` in the deployment environment alongside
-`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, using keys from the same Clerk instance.
-The consent API authenticates the signed-in user and validates verified phone
-numbers before forwarding an explicit opt-in to the backend. Without the server
-key, this API returns HTTP 503; it never silently enables text messages.
-`WANDER_API_BASE_URL` selects the backend (default: `https://api.wander.one`).
