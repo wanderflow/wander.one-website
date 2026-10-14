@@ -1,10 +1,11 @@
-import { DEFAULT_OTP_CODE } from "./constants";
+import { DEFAULT_OTP_CODE } from "./constants.js";
 
 export const FLOW_VIEW = {
   EVENT: "event",
   PHONE: "phone",
   OTP: "otp",
   NAME: "name",
+  BIRTHDAY: "birthday",
   QUESTIONS: "questions",
   RESULT: "result",
 };
@@ -38,6 +39,9 @@ export function createFlowState() {
       name: "",
       phoneDigits: "",
       country: "ca",
+      birthMonth: "",
+      birthDay: "",
+      birthYear: "",
     },
     otpCode: DEFAULT_OTP_CODE,
     answers: {},
@@ -91,7 +95,8 @@ export function inviteFlowReducer(state, action) {
         view: FLOW_VIEW.EVENT,
         eventCard: EVENT_CARD.RSVP,
         rsvpIntent: "going",
-        profile: { name: "", phoneDigits: "", country: "ca" },
+        profile: { name: "", phoneDigits: "", country: "ca", birthMonth: "", birthDay: "", birthYear: "" },
+        birthdayBackView: FLOW_VIEW.OTP,
         otpCode: DEFAULT_OTP_CODE,
         answers: action.defaultAnswers,
         resultKind: null,
@@ -132,6 +137,15 @@ export function inviteFlowReducer(state, action) {
           ...state.profile,
           name: action.name ?? state.profile.name,
         },
+      };
+
+    case "CONTINUE_TO_BIRTHDAY":
+      return {
+        ...state,
+        view: FLOW_VIEW.BIRTHDAY,
+        birthdayBackView: state.view === FLOW_VIEW.BIRTHDAY
+          ? state.birthdayBackView
+          : state.view,
       };
 
     case "CONTINUE_TO_QUESTIONS":
@@ -199,10 +213,14 @@ export function inviteFlowReducer(state, action) {
         };
       }
 
+      if (state.view === FLOW_VIEW.BIRTHDAY) {
+        return { ...state, view: state.birthdayBackView || FLOW_VIEW.OTP };
+      }
+
       if (state.view === FLOW_VIEW.QUESTIONS) {
         return {
           ...state,
-          view: FLOW_VIEW.OTP,
+          view: state.profile.birthYear ? FLOW_VIEW.BIRTHDAY : FLOW_VIEW.OTP,
         };
       }
 

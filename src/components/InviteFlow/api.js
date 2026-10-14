@@ -138,6 +138,7 @@ export async function fetchWebIdentityStatus({
   sessionId,
   clerkUserId,
   displayName,
+  birthday,
 }) {
   const response = await fetch(`/api/web-onboarding/sessions/${sessionId}/identity-status`, {
     method: "POST",
@@ -145,6 +146,7 @@ export async function fetchWebIdentityStatus({
     body: JSON.stringify({
       clerk_user_id: clerkUserId,
       display_name: displayName,
+      birthday,
     }),
   });
   const okResponse = await ensureOk(response);
@@ -155,6 +157,7 @@ export async function completeWebSession({
   sessionId,
   clerkUserId,
   displayName,
+  birthday,
 }) {
   const response = await fetch(`/api/web-onboarding/sessions/${sessionId}/complete`, {
     method: "POST",
@@ -162,6 +165,7 @@ export async function completeWebSession({
     body: JSON.stringify({
       clerk_user_id: clerkUserId,
       display_name: displayName,
+      birthday,
     }),
   });
   const okResponse = await ensureOk(response);
