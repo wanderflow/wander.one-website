@@ -26,6 +26,7 @@ import ScreenFrame from "./shared/ScreenFrame";
 import EventScreen from "./screens/EventScreen";
 import PhoneScreen from "./screens/PhoneScreen";
 import NameScreen from "./screens/NameScreen";
+import BirthdayScreen from "./screens/BirthdayScreen";
 import OtpScreen from "./screens/OtpScreen";
 import QuestionsScreen from "./screens/QuestionsScreen";
 import ResultScreen from "./screens/ResultScreen";
@@ -493,17 +494,17 @@ export default function InviteFlow({ slug, inviteCode }) {
     joinQuestions.length,
   ]);
 
-  const continueAfterProfile = useCallback(async (clerkUserId, displayName) => {
+  const continueAfterProfile = useCallback(async (clerkUserId, displayName, sessionOverride = null) => {
     const hasQuestions =
       (flowState.rsvpIntent === "going" || flowState.rsvpIntent === "maybe") &&
       joinQuestions.length > 0;
 
-    if (hasQuestions) {
+    if (hasQuestions && !(sessionOverride || webSession)?.parent_expression_id) {
       dispatch({ type: "CONTINUE_TO_QUESTIONS" });
       return;
     }
 
-    const completedSession = await completeFromBackend(clerkUserId, displayName);
+    const completedSession = await completeFromBackend(clerkUserId, displayName, sessionOverride);
     trackRegistrationCompleted(completedSession, clerkUserId);
     dispatch({
       type: "APPLY_BACKEND_RESULT",
@@ -514,6 +515,7 @@ export default function InviteFlow({ slug, inviteCode }) {
     flowState.rsvpIntent,
     joinQuestions.length,
     trackRegistrationCompleted,
+    webSession,
   ]);
 
   const continueFromIdentityStatus = useCallback(async (identityPayload, clerkUserId) => {
@@ -547,12 +549,17 @@ export default function InviteFlow({ slug, inviteCode }) {
       return;
     }
 
+    if (nextStep.type === "birthday") {
+      dispatch({ type: "CONTINUE_TO_BIRTHDAY" });
+      return;
+    }
+
     if (nextStep.type === "questions") {
       dispatch({ type: "CONTINUE_TO_QUESTIONS" });
       return;
     }
 
-    await continueAfterProfile(clerkUserId, nextStep.name);
+    await continueAfterProfile(clerkUserId, nextStep.name, identityPayload.session);
   }, [
     continueAfterProfile,
     flowState.rsvpIntent,
@@ -729,34 +736,45 @@ export default function InviteFlow({ slug, inviteCode }) {
         clerkUserId,
         displayName: flowState.profile.name,
       });
-      setWebSession(identityPayload.session);
-      const identityResultKind = resultStatusToResultKind(
-        identityPayload.session?.result_status,
-      );
-      if (identityResultKind) {
-        trackRegistrationCompleted(identityPayload.session, clerkUserId);
-        dispatch({
-          type: "APPLY_BACKEND_RESULT",
-          resultKind: identityResultKind,
-        });
-        return;
-      }
-      await continueAfterProfile(clerkUserId);
+      await continueFromIdentityStatus(identityPayload, clerkUserId);
     } catch (err) {
       showError(err.message);
     } finally {
       setPendingAction(null);
     }
   }, [
-    continueAfterProfile,
+    continueFromIdentityStatus,
     ensureWebSession,
     flowState.profile.name,
     pendingAction,
     showError,
-    trackRegistrationCompleted,
     verifiedClerkUserId,
     webPhoneAuth.clerkUserId,
   ]);
+
+  const handleContinueBirthday = useCallback(async (birthday) => {
+    if (pendingAction || !birthday) return;
+    setActionError("");
+    setPendingAction("birthday");
+    try {
+      const session = await ensureWebSession();
+      if (!session?.session_id) throw new Error("Missing web session");
+      const clerkUserId = verifiedClerkUserId || webPhoneAuth.clerkUserId;
+      if (!clerkUserId) throw new Error("Missing verified Clerk user");
+      const identityPayload = await fetchWebIdentityStatus({
+        sessionId: session.session_id,
+        clerkUserId,
+        displayName: flowState.profile.name,
+        birthday,
+      });
+      await continueFromIdentityStatus(identityPayload, clerkUserId);
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      setPendingAction(null);
+    }
+  }, [pendingAction, ensureWebSession, verifiedClerkUserId, webPhoneAuth.clerkUserId,
+    flowState.profile.name, continueFromIdentityStatus, showError]);
 
   const handleSubmitQuestions = useCallback(async () => {
     if (pendingAction) return;
@@ -919,6 +937,18 @@ export default function InviteFlow({ slug, inviteCode }) {
               }
               onContinue={handleContinueName}
               isSubmitting={pendingAction === "name"}
+              error={actionError}
+            />
+          )}
+
+          {flowState.view === FLOW_VIEW.BIRTHDAY && (
+            <BirthdayScreen
+              styles={styles}
+              profile={flowState.profile}
+              onBack={() => { setActionError(""); dispatch({ type: "BACK" }); }}
+              onUpdateProfile={(field, value) => dispatch({ type: "UPDATE_PROFILE", field, value })}
+              onContinue={handleContinueBirthday}
+              isSubmitting={pendingAction === "birthday"}
               error={actionError}
             />
           )}
